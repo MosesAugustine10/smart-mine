@@ -594,12 +594,13 @@ CREATE TABLE IF NOT EXISTS equipment_payload_logs (
 -- 21. CONTACT SUBMISSIONS (Landing Page)
 -- =============================================
 CREATE TABLE IF NOT EXISTS contact_submissions (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name        TEXT NOT NULL,
-  email       TEXT,
-  phone       TEXT,
-  message     TEXT NOT NULL,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  full_name     TEXT NOT NULL,
+  phone_number  TEXT,
+  company_type  TEXT,
+  message       TEXT,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  status        TEXT DEFAULT 'pending'
 );
 
 -- =============================================

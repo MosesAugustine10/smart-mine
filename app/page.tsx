@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
   Mountain, ArrowRight, CheckCircle2, 
-  Users, HardHat, Phone, Zap, ShieldCheck, Loader2,
+  Users, HardHat, Phone, Zap, ShieldCheck, Loader2, Menu, X,
   TrendingUp, BarChart3, Pickaxe, Map, BookOpen, Clock, Activity, Target, Truck
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -93,6 +93,7 @@ export const FormWrapper = ({ vibe }: { vibe: () => void }) => {
 
 // ─── Main Landing Page Component ──────────────────────────────────────────────
 export default function LandingPage() {
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false)
   const vibe = () => { if (typeof navigator !== 'undefined') navigator.vibrate?.(50) }
 
   return (
@@ -109,6 +110,17 @@ export default function LandingPage() {
             <span className="text-[7px] font-bold text-muted-foreground uppercase tracking-widest leading-none mt-1">(Mfumo wa Kisasa wa Kusimamia Mgodi)</span>
           </div>
         </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button 
+            className="md:hidden p-2 text-foreground" 
+            onClick={() => { setIsMenuOpen(!isMenuOpen); vibe(); }}
+          >
+            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+
+        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
           <Link href="#discover" onClick={vibe} className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-amber-500 transition-colors">Gundua Mfumo / Discover</Link>
           <Link href="#pricing" onClick={vibe} className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-amber-400 transition-colors">Bei Yetu</Link>
@@ -122,13 +134,29 @@ export default function LandingPage() {
               <Button className="h-9 px-4 text-[9px] font-black uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 transition-all rounded-xl">Ingia: Kati</Button>
             </Link>
           </div>
-          <ThemeToggle />
         </nav>
+
+        {/* Mobile Navigation Menu */}
+        {isMenuOpen && (
+          <div className="absolute top-20 left-0 w-full bg-background border-b border-border p-6 flex flex-col gap-6 md:hidden animate-in slide-in-from-top duration-300 z-40">
+            <Link href="#discover" onClick={() => { setIsMenuOpen(false); vibe(); }} className="text-xs font-black uppercase tracking-widest text-foreground py-2 border-b border-border/50">Gundua Mfumo</Link>
+            <Link href="#pricing" onClick={() => { setIsMenuOpen(false); vibe(); }} className="text-xs font-black uppercase tracking-widest text-foreground py-2 border-b border-border/50">Bei Yetu</Link>
+            <Link href="#contact" onClick={() => { setIsMenuOpen(false); vibe(); }} className="text-xs font-black uppercase tracking-widest text-foreground py-2 border-b border-border/50">Mawasiliano</Link>
+            <div className="flex flex-col gap-3 pt-2">
+              <Link href="/chimbo" onClick={vibe}>
+                <Button variant="outline" className="w-full h-12 text-[10px] font-black uppercase tracking-widest border-amber-500 text-amber-500 rounded-xl">Ingia: Wachimbaji Wadogo</Button>
+              </Link>
+              <Link href="/auth/login" onClick={vibe}>
+                <Button className="w-full h-12 text-[10px] font-black uppercase tracking-widest bg-foreground text-background rounded-xl">Ingia: Migodi ya Kati</Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="flex-1">
         {/* ── SPLIT-SCREEN HERO: Left = Slider | Right = Content ── */}
-        <section className="flex flex-col md:flex-row overflow-hidden" style={{ height: 'calc(100vh - 5rem)' }}>
+          <section className="flex flex-col md:flex-row md:h-[calc(100vh-5rem)] overflow-hidden">
 
           {/* ── LEFT HALF: Image Slider ── */}
           <div className="relative w-full md:w-1/2 h-[45vh] md:h-full flex-shrink-0 overflow-hidden">
@@ -323,7 +351,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <a href="https://wa.me/255623310006?text=Habari! Nahitaji maelezo zaidi kuhusu mfumo wa Shimo ERP." 
+      <a href="https://wa.me/255623310006?text=Habari! Nahitaji maelezo zaidi kuhusu mfumo wa SMART MINE." 
          target="_blank" rel="noreferrer" onClick={vibe}
          className="fixed bottom-8 right-8 z-[100] group">
           <div className="absolute inset-0 bg-emerald-500 rounded-2xl animate-ping opacity-20 scale-150" />
