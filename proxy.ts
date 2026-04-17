@@ -97,7 +97,7 @@ export async function proxy(request: NextRequest) {
 
   // 5. SUPER ADMIN BYPASS - FAST TRACK
   if (userRole === "SUPER_ADMIN") {
-    if (pathname === "/admin" || pathname === "/home" || pathname === "/auth/login") {
+    if (pathname === "/" || pathname === "/admin" || pathname === "/home" || pathname === "/auth/login") {
       return NextResponse.redirect(new URL("/super-admin", request.url))
     }
     return supabaseResponse

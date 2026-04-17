@@ -121,24 +121,23 @@ export default function LandingPage() {
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link href="#discover" onClick={vibe} className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-amber-500 transition-colors">Gundua Mfumo / Discover</Link>
-          <Link href="#pricing" onClick={vibe} className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-amber-400 transition-colors">Bei Yetu</Link>
-          <Link href="#contact" onClick={vibe} className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-amber-400 transition-colors">Mawasiliano</Link>
+        <nav className="hidden lg:flex items-center gap-6">
+          <Link href="#discover" onClick={vibe} className="text-[8px] xl:text-[9px] font-black uppercase tracking-[0.15em] xl:tracking-[0.2em] text-muted-foreground hover:text-amber-500 transition-colors">Gundua Mfumo / Discover</Link>
+          <Link href="#pricing" onClick={vibe} className="text-[8px] xl:text-[9px] font-black uppercase tracking-[0.15em] xl:tracking-[0.2em] text-muted-foreground hover:text-amber-400 transition-colors">Bei Yetu</Link>
+          <Link href="#contact" onClick={vibe} className="text-[8px] xl:text-[9px] font-black uppercase tracking-[0.15em] xl:tracking-[0.2em] text-muted-foreground hover:text-amber-400 transition-colors">Mawasiliano</Link>
           <div className="h-4 w-[1px] bg-border" />
           <div className="flex items-center gap-2">
             <Link href="/chimbo" onClick={vibe}>
-              <Button variant="outline" className="h-9 px-4 text-[9px] font-black uppercase tracking-widest border-amber-500/40 text-amber-500 hover:bg-amber-500 hover:text-slate-950 transition-all rounded-xl">Ingia: Wadogo</Button>
+              <Button variant="outline" className="h-9 px-3 xl:px-4 text-[8px] xl:text-[9px] font-black uppercase tracking-widest border-amber-500/40 text-amber-500 hover:bg-amber-500 hover:text-slate-950 transition-all rounded-xl">Ingia: Wadogo</Button>
             </Link>
             <Link href="/auth/login" onClick={vibe}>
-              <Button className="h-9 px-4 text-[9px] font-black uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 transition-all rounded-xl">Ingia: Kati</Button>
+              <Button className="h-9 px-3 xl:px-4 text-[8px] xl:text-[9px] font-black uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 transition-all rounded-xl">Ingia: Kati</Button>
             </Link>
           </div>
         </nav>
 
-        {/* Mobile Navigation Menu */}
         {isMenuOpen && (
-          <div className="absolute top-20 left-0 w-full bg-background border-b border-border p-6 flex flex-col gap-6 md:hidden animate-in slide-in-from-top duration-300 z-40">
+          <div className="absolute top-20 left-0 w-full bg-background border-b border-border p-6 flex flex-col gap-6 lg:hidden animate-in slide-in-from-top duration-300 z-40">
             <Link href="#discover" onClick={() => { setIsMenuOpen(false); vibe(); }} className="text-xs font-black uppercase tracking-widest text-foreground py-2 border-b border-border/50">Gundua Mfumo</Link>
             <Link href="#pricing" onClick={() => { setIsMenuOpen(false); vibe(); }} className="text-xs font-black uppercase tracking-widest text-foreground py-2 border-b border-border/50">Bei Yetu</Link>
             <Link href="#contact" onClick={() => { setIsMenuOpen(false); vibe(); }} className="text-xs font-black uppercase tracking-widest text-foreground py-2 border-b border-border/50">Mawasiliano</Link>
@@ -182,7 +181,7 @@ export default function LandingPage() {
             </p>
 
             {/* CTA Cards */}
-            <div className="grid sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-5">
               {/* Small Scale */}
               <div className="group flex flex-col bg-card border-2 border-border rounded-3xl p-7 hover:border-amber-500/60 hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-500">
                 <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-3">Wachimbaji Wadogo</p>
@@ -194,7 +193,7 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <Link href="/chimbo" onClick={vibe}>
-                  <Button className="w-full h-12 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-widest rounded-xl">
+                  <Button className="w-full h-12 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest rounded-xl">
                     PAKUA APP YA SHIMO
                   </Button>
                 </Link>
@@ -211,7 +210,7 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <Link href="#contact" onClick={vibe}>
-                  <Button className="w-full h-12 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-widest rounded-xl">
+                  <Button className="w-full h-12 bg-blue-600 hover:bg-blue-500 text-white font-black text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest rounded-xl">
                     OMBA USAJILI
                   </Button>
                 </Link>
