@@ -908,3 +908,11 @@ CREATE POLICY "Allow authenticated read"   ON maintenance_alerts FOR SELECT USIN
 CREATE POLICY "Allow authenticated insert" ON maintenance_alerts FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Allow authenticated update" ON maintenance_alerts FOR UPDATE USING (auth.role() = 'authenticated');
 
+-- Core Identity Policies
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow users to read own profile" ON user_profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Allow users to update own profile" ON user_profiles FOR UPDATE USING (auth.uid() = id);
+
+ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated read on companies" ON companies FOR SELECT USING (auth.role() = 'authenticated');
+

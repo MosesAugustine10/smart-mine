@@ -49,6 +49,7 @@ const MANAGER_MODULES = [
     items: [
       { label: "Mauzo ya Osha",  icon: DollarSign,   href: "/chimbo/mauzo",        color: "text-emerald-500" },
       { label: "Matumizi",       icon: DollarSign,   href: "/chimbo/matumizi",     color: "text-red-400" },
+      { label: "Invoices / Malipo", icon: Crown,      href: "/chimbo/billing",      color: "text-amber-500" },
       { label: "Bei ya Dhahabu", icon: BarChart3,    href: "/chimbo/bei-dhahabu",  color: "text-amber-500" },
     ],
   },
@@ -177,6 +178,55 @@ export default function ChimboLayout({ children }: { children: React.ReactNode }
       </div>
     </div>
   )
+
+  // ── 30-Day Trial Paywall ─────────────────────────────────────────────────
+  const start = new Date(account.trial_start || account.created_at || Date.now())
+  const daysSince = Math.floor((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24))
+  const isExpired = account.subscription_status !== "ACTIVE" && (daysSince > 30 || account.subscription_status === "EXPIRED")
+
+  // Exempt Billing page from Paywall so they can pay
+  const isBillingPage = pathname === "/chimbo/billing"
+
+  if (isExpired && account.role === "MANAGER" && !isBillingPage) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center space-y-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-red-500/5 blur-[100px] pointer-events-none" />
+        <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/30">
+          <ShieldAlert className="w-10 h-10 text-red-500" />
+        </div>
+        <div className="space-y-2 z-10">
+          <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">Muda wa Matazamio Umeisha</h1>
+          <p className="text-sm font-bold text-slate-400">Siku zako 30 za majaribio ya bure zimemalizika.</p>
+        </div>
+        <div className="bg-slate-900 border-2 border-amber-500/50 rounded-[2rem] p-8 max-w-sm w-full z-10 shadow-2xl shadow-amber-500/10">
+          <p className="text-[10px] font-black uppercase text-amber-500 tracking-widest mb-1">GHARAMA YA MWEZI</p>
+          <div className="flex items-baseline gap-1 justify-center mb-6">
+             <span className="text-4xl font-black text-white tracking-tighter">25,000</span>
+             <span className="text-xs font-bold text-slate-500 uppercase">TSh</span>
+          </div>
+          <ul className="space-y-3 text-left mb-8">
+             {["Endelea kutumia mfumo wote", "Tunza data zako salama", "Ripoti za SMS haziathiriki"].map((t, i) => (
+                <li key={i} className="text-[10px] font-bold text-slate-300 uppercase tracking-wide flex items-center gap-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {t}
+                </li>
+             ))}
+          </ul>
+          <button 
+            onClick={() => { vibe(); router.push("/chimbo/billing") }}
+            className="w-full h-14 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black uppercase text-[10px] tracking-widest rounded-xl transition-colors shadow-lg shadow-amber-500/20"
+          >
+             ANGALIA INVOICE & LIPA
+          </button>
+          <a href="https://wa.me/255623310006?text=Habari! Muda wangu wa majaribio Smart Mine umeisha. Nahitaji kulipia." target="_blank" rel="noreferrer" className="block mt-3 text-[10px] font-black text-amber-500/60 uppercase tracking-widest hover:text-amber-500">
+             Msaada wa Malipo (WhatsApp)
+          </a>
+        </div>
+        <button onClick={handleLogout} className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hover:text-white transition-colors z-10 mt-4">
+          Nitaingia Baadaye (Log Out)
+        </button>
+      </div>
+    )
+  }
 
   const isManager = account.role === "MANAGER"
   const MODULES = isManager ? MANAGER_MODULES : SUPERVISOR_MODULES

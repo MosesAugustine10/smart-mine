@@ -45,19 +45,41 @@ export default function LoginPage() {
 
       if (error) throw error
 
-      // Just refresh the page or push to home - the global AuthProvider will handle the specific SUPER_ADMIN redirect
-      router.refresh()
-      router.push("/")
+      // 1. Quick Profile Fetch - No complex joins
+      let role = "Guest"
+      try {
+        const { data: profile } = await supabase.from("user_profiles").select("role").eq("id", data.user.id).single()
+        role = profile?.role || "Guest"
+      } catch (err) {
+        console.warn("Profile fetch failed, defaulting to Guest redirect")
+      }
+
+      // 2. Set role cookie for middleware
+      const syncData = {
+        role: role,
+        cid: (data.user?.user_metadata as any)?.company_id || null,
+        mods: role === "SUPER_ADMIN" ? ["all"] : [],
+        ts: Date.now()
+      }
+      document.cookie = `msm_user_role=${encodeURIComponent(JSON.stringify(syncData))}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`
+
+      // 3. Forced Refresh Redirect
+      if (role === "SUPER_ADMIN") {
+        window.location.href = "/super-admin"
+      } else if (role === "admin" || role === "supervisor") {
+        window.location.href = "/chimbo/dashboard"
+      } else {
+        window.location.href = "/"
+      }
     } catch (err: any) {
       setError(err.message)
-    } finally {
       setLoading(false)
     }
   }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 dark:bg-slate-950 md:h-screen md:overflow-hidden">
-      
+
       {/* LEFT SIDE: Slider */}
       <div className="w-full md:w-1/2 h-[40vh] md:h-full relative overflow-hidden">
         <HeroSlider slides={loginSlides} />
@@ -154,9 +176,9 @@ export default function LoginPage() {
                 </Button>
 
                 <div className="flex flex-col gap-2 w-full">
-                  <Button 
-                    type="button" 
-                    variant="link" 
+                  <Button
+                    type="button"
+                    variant="link"
                     onClick={async () => {
                       if (!email) {
                         setError("Please enter your email address to reset password.")
@@ -175,13 +197,13 @@ export default function LoginPage() {
                   >
                     {resetLoading ? "Sending Link..." : "Forgot your password?"}
                   </Button>
-                  
+
 
                 </div>
               </CardFooter>
             </form>
           </Card>
-          
+
           <p className="text-center text-[10px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.3em]">
             © 2026 Smart Mine Tanzania
           </p>

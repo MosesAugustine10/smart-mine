@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
@@ -9,10 +9,15 @@ import {
   TrendingUp, BarChart3, Pickaxe, Map, BookOpen, Clock, Activity, Target, Truck
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { HeroSlider } from "@/components/hero-slider"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import dynamic from "next/dynamic"
+
+const HeroSlider = dynamic(() => import("@/components/hero-slider").then(m => m.HeroSlider), { 
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-slate-900 animate-pulse" />
+})
 
 // ─── Landing Page Form Component ──────────────────────────────────────────────
 export const FormWrapper = ({ vibe }: { vibe: () => void }) => {
@@ -300,39 +305,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="pricing" className="py-32 bg-accent/30 border-t border-border">
-          <div className="container px-6 mx-auto">
-            <div className="text-center mb-20">
-                <Badge className="bg-accent text-muted-foreground border-border px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] mb-4">Gharama za Mfumo</Badge>
-                <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter italic text-foreground">Bei Inayoeleweka.</h2>
-            </div>
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                {[
-                    { name: "Mchimbaji Mdogo", price: "Kuanzia TSh 15,000", period: "/Mwezi", features: ["15 Modules Simplified", "Offline Support", "Gold Price Calculator", "Daily SMS Reports"], cta: "Anza Bure Siku 30", route: "/chimbo" },
-                    { name: "Mgodi wa Kati", price: "Kuanzia TSh 2,000,000", period: "/Mwaka", features: ["Full ERP Suite", "Unlimited Users", "Asset Telemetry", "Advanced Finance"], highlight: true, cta: "Ongea na Mauzo", route: "#contact" },
-                    { name: "Consultant / Contractor", price: "Kuanzia TSh 650,000", period: "/Mwaka", features: ["Drilling/Blasting Only", "Read-Only Access", "Technical Audits", "Multi-Project Support"], cta: "Omba Usajili", route: "#contact" }
-                ].map((tier, i) => (
-                    <div key={i} className={`relative p-10 rounded-[2.5rem] border-2 flex flex-col ${tier.highlight ? "bg-amber-500 border-amber-600 shadow-2xl" : "bg-card/50 border-border"}`}>
-                        <h3 className={`text-xl font-black uppercase tracking-tighter mb-2 ${tier.highlight ? "text-slate-950" : "text-foreground"}`}>{tier.name}</h3>
-                        <div className="flex items-baseline gap-1 mb-8">
-                            <span className={`text-4xl font-black tracking-tight ${tier.highlight ? "text-slate-950" : "text-foreground"}`}>{tier.price}</span>
-                            <span className={`text-sm font-bold ${tier.highlight ? "text-slate-900/60" : "text-muted-foreground"}`}>{tier.period}</span>
-                        </div>
-                        <ul className="space-y-4 mb-10 flex-1">
-                            {tier.features.map(f => (
-                                <li key={f} className={`flex items-center gap-3 text-sm font-bold ${tier.highlight ? "text-slate-900" : "text-muted-foreground"}`}>
-                                    <CheckCircle2 className={`w-4 h-4 ${tier.highlight ? "text-slate-950" : "text-emerald-500"}`} /> {f}
-                                </li>
-                            ))}
-                        </ul>
-                        <Link href={tier.route} onClick={vibe}>
-                            <Button className={`w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest ${tier.highlight ? "bg-slate-950 hover:bg-slate-900 text-white" : "bg-accent hover:bg-accent/80 text-foreground"}`}>{tier.cta}</Button>
-                        </Link>
-                    </div>
-                ))}
-            </div>
-          </div>
-        </section>
+
+        <PricingSection vibe={vibe} />
 
         <section id="contact" className="py-32 border-t border-border">
             <div className="container px-6 mx-auto">
@@ -378,4 +352,128 @@ export default function LandingPage() {
       </footer>
     </div>
   )
+}
+
+// ─── Pricing Section Component (dynamically shows Consultant card via feature flag) ──
+function PricingSection({ vibe }: { vibe: () => void }) {
+    const [showConsultant, setShowConsultant] = useState(false)
+
+    useEffect(() => {
+        async function fetchFlags() {
+            try {
+                const { getSupabaseBrowserClient } = await import('@/lib/supabase/client')
+                const supabase = getSupabaseBrowserClient()
+                const { data } = await supabase
+                    .from('system_flags')
+                    .select('is_enabled')
+                    .eq('flag_name', 'show_consultant_pricing')
+                    .single()
+                if (data?.is_enabled) setShowConsultant(true)
+            } catch { /* table may not exist yet — silently hide card */ }
+        }
+        fetchFlags()
+    }, [])
+
+    const cards: { name: string; price: string; features: string[]; cta: string; badge: string; route: string; highlight: boolean }[] = [
+        {
+            name: "MCHIMBAJI MDOGO",
+            price: "TSh 25,000 / Mwezi",
+            features: [
+                "Rekodi Uzalishaji na Gharama za Shimo Kila Siku",
+                "Fuatilia Matumizi ya Mafuta, Vilipukaji na Vifaa",
+                "Kikokotoo cha Dhahabu na Bei ya Soko Moja Kwa Moja",
+                "Daftari la Ajali na Gharama za Matibabu",
+                "Orodha ya Vibarua, Mahudhurio na Mishahara",
+                "Ripoti za Wiki na Mwezi (PDF na Excel)",
+                "Angalia Faida au Hasara ya Shimo Lako",
+            ],
+            cta: "ANZA BURE SIKU 30",
+            badge: "JARIBIO LA BURE SIKU 30",
+            route: "/chimbo",
+            highlight: false,
+        },
+        {
+            name: "MGODI WA KATI / MKANDARASI",
+            price: "Bei ya Mkataba",
+            features: [
+                "Modules Zote za Uendeshaji (Blasting, Drilling, Fleet)",
+                "Watumiaji Wengi wenye Ruhusa Tofauti (Admin, Meneja)",
+                "Ramani ya Mgodi na Ufuatiliaji wa Magari (GPS Tracking)",
+                "Assay na Diamond Drilling kwa Wanajiolojia",
+                "Ripoti za Kina za Fedha, Uzalishaji na Usalama",
+                "Msaada wa Kipaumbele na Mafunzo ya Timu Yako",
+                "Bei Inajadiliwa Kulingana na Mahitaji Yako",
+            ],
+            cta: "OMBA MKATABA / USAJILI",
+            badge: "JARIBIO LA BURE SIKU 30",
+            route: "#contact",
+            highlight: true,
+        },
+    ]
+
+    if (showConsultant) {
+        cards.push({
+            name: "MSHAURI / MKAGUZI WA MADINI",
+            price: "TSh 75,000 / Mwezi",
+            features: [
+                "Data ya Kijiolojia na Diamond Drilling (Read-Only)",
+                "Matokeo ya Maabara (Assay) na QA/QC Reports",
+                "Ripoti za NI 43-101 na JORC Zinazokubalika",
+                "Uwezo wa Kuangalia Migodi Mingi Kwa Wakati Mmoja",
+                "Pakua Data Zote kwa Excel kwa Uchambuzi wa Ziada",
+            ],
+            cta: "JISAJILI KAMA MSHAURI",
+            badge: "JARIBIO LA BURE SIKU 14",
+            route: "#contact",
+            highlight: false,
+        })
+    }
+
+    return (
+        <section id="pricing" className="py-32 bg-accent/30 border-t border-border">
+            <div className="container px-6 mx-auto">
+                <div className="text-center mb-20">
+                    <Badge className="bg-accent text-muted-foreground border-border px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] mb-4">
+                        Gharama za Mfumo
+                    </Badge>
+                    <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter italic text-foreground">
+                        Bei Inayoeleweka.
+                    </h2>
+                </div>
+                <div className={`grid gap-8 mx-auto ${showConsultant ? 'md:grid-cols-3 max-w-7xl' : 'md:grid-cols-2 max-w-5xl'}`}>
+                    {cards.map((tier, i) => (
+                        <div key={i} className={`relative pt-10 pb-8 px-8 rounded-[2.5rem] border-2 flex flex-col overflow-visible ${tier.highlight ? "bg-amber-500 border-amber-600 shadow-2xl" : "bg-card/50 border-border"}`}>
+                            {/* Trial Badge */}
+                            <div className="absolute -top-3 left-8">
+                                <span className="bg-emerald-500 text-white font-black uppercase tracking-widest px-4 py-1.5 text-[9px] rounded-full shadow-lg shadow-emerald-500/30">
+                                    ✦ {tier.badge}
+                                </span>
+                            </div>
+                            <h3 className={`text-lg font-black uppercase tracking-tighter mb-3 mt-2 ${tier.highlight ? "text-slate-950" : "text-foreground"}`}>
+                                {tier.name}
+                            </h3>
+                            <div className="mb-8">
+                                <span className={`text-3xl font-black tracking-tight ${tier.highlight ? "text-slate-950" : "text-foreground"}`}>
+                                    {tier.price}
+                                </span>
+                            </div>
+                            <ul className="space-y-3.5 mb-10 flex-1">
+                                {tier.features.map(f => (
+                                    <li key={f} className={`flex items-start gap-3 text-sm font-semibold leading-snug ${tier.highlight ? "text-slate-900" : "text-muted-foreground"}`}>
+                                        <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${tier.highlight ? "text-slate-950" : "text-emerald-500"}`} />
+                                        <span>{f}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <Link href={tier.route} onClick={vibe}>
+                                <Button className={`w-full h-14 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all active:scale-95 ${tier.highlight ? "bg-slate-950 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/30" : "bg-accent hover:bg-accent/80 text-foreground"}`}>
+                                    {tier.cta}
+                                </Button>
+                            </Link>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+    )
 }

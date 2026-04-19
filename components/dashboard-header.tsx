@@ -3,6 +3,7 @@ import React from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 import { ModuleHelpNotebook } from "@/components/module-help-notebook"
+import { PendingPaymentsBadge } from "@/components/pending-payments-badge"
 
 export function DashboardHeader({ title, description }: { title: string, description: string }) {
   const router = useRouter()
@@ -40,7 +41,10 @@ export function DashboardHeader({ title, description }: { title: string, descrip
           <h1 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight leading-none">{title}</h1>
           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{description}</p>
         </div>
-        <ModuleHelpNotebook moduleTitle={title} />
+        <div className="flex items-center gap-2">
+           <PendingPaymentsBadge />
+           <ModuleHelpNotebook moduleTitle={title} />
+        </div>
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { User } from "@supabase/supabase-js"
+import { User, AuthChangeEvent, Session } from "@supabase/supabase-js"
 import { useRouter, usePathname } from "next/navigation"
 
 export type UserRole =
@@ -54,7 +54,7 @@ const AuthContext = createContext<AuthContextValue>({
 })
 
 // Routes that should never trigger auth network calls
-const PUBLIC_ROUTES = ['/', '/auth', '/chimbo', '/landing']
+const PUBLIC_ROUTES = ['/', '/auth', '/chimbo', '/landing', '/gate']
 function isPublicPath(pathname: string | null) {
   if (!pathname) return false
   return PUBLIC_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'))
@@ -76,6 +76,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
     async function loadSession() {
+      // 1. FAST-PATH: Check for Sync Cookie (Set by Middleware)
+      const getCookie = (name: string) => {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+        return match ? match[2] : null
+      }
+
+      const syncCookie = getCookie('msm_user_role')
+      let cachedProfile: any = null
+      
+      if (syncCookie) {
+          try {
+              let decoded = syncCookie;
+              try { decoded = decodeURIComponent(syncCookie); } catch (e) {}
+              
+              if (decoded.startsWith('j:')) decoded = decoded.substring(2);
+              
+              if (decoded.startsWith('{')) {
+                  const data = JSON.parse(decoded)
+                  if (data && data.role) {
+                      cachedProfile = {
+                          role: data.role.toUpperCase(),
+                          company_id: data.cid,
+                          enabled_modules: data.mods || []
+                      }
+                  }
+              } else if (decoded && decoded !== 'undefined') {
+                  cachedProfile = { role: decoded.toUpperCase() }
+              }
+          } catch (e) {
+              console.warn("Cookie parse error:", e)
+          }
+      }
+
       if (isPublic) {
         setLoading(false)
         return
@@ -88,9 +121,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (session?.user) {
           setUser(session.user)
+          
+          // 2. Use cached profile if we have it, otherwise fetch
+          if (cachedProfile) {
+            setProfile({
+                id: session.user.id,
+                email: session.user.email || "",
+                ...cachedProfile
+            } as UserProfile)
+            setLoading(false)
+            return // SKIP NETWORK FETCH
+          }
+
           const { data: profileData } = await supabase
             .from('user_profiles')
-            .select('*, companies(enabled_modules)')
+            .select('*')
             .eq('id', session.user.id)
             .maybeSingle()
           
@@ -108,38 +153,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    loadSession()
+    // Force loader to clear after 3 seconds max
+    const fallbackTimer = setTimeout(() => {
+      setLoading(false)
+    }, 3000)
+
+    loadSession().then(() => clearTimeout(fallbackTimer))
 
     // 4. AUTH STATE UPDATES
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-
-
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        setLoading(true)
-        const { data: profileData } = await supabase
-          .from('user_profiles')
-          .select('*, companies(enabled_modules)')
-          .eq('id', session.user.id)
-          .maybeSingle()
-        
-        if (profileData) {
-          setProfile({
-            ...profileData,
-            enabled_modules: (profileData as any).companies?.enabled_modules || []
-          } as UserProfile)
+    let listener: any = null
+    
+    if (!isPublic) {
+      const { data } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
+        if (session?.user) {
+          setUser(session.user)
+          
+          // Check the raw cookie. If we already established SUPER_ADMIN via gate, NEVER overwrite it.
+          const localCookie = typeof document !== 'undefined' ? document.cookie : ''
+          const isSuperAdminCookie = localCookie.includes('SUPER_ADMIN')
+          
+          // Only fetch if profile is missing - prevents refresh loops
+          if (!profile && !isSuperAdminCookie) {
+              const { data: profileData } = await supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .maybeSingle()
+              
+              if (profileData) {
+                setProfile({
+                  ...profileData,
+                  enabled_modules: (profileData as any).companies?.enabled_modules || []
+                } as UserProfile)
+              }
+          }
+        } else {
+          setUser(null)
+          setProfile(null)
         }
         setLoading(false)
-      } else {
-        setProfile(null)
-        setLoading(false)
-      }
-    })
+      })
+      listener = data
+    }
 
     return () => {
-      listener.subscription.unsubscribe()
+      listener?.subscription.unsubscribe()
     }
-  }, [])
+  }, [isPublic, profile])
 
   const signOut = async () => {
     document.cookie = 'demo_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
@@ -216,7 +276,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const path = (pathname?.split('/')[1]) || 'home'
 
-    if (profile?.role === 'SUPER_ADMIN' && path !== 'super-admin') {
+    if (profile?.role?.toUpperCase() === 'SUPER_ADMIN' && path !== 'super-admin') {
       router.replace('/super-admin')
       return
     }

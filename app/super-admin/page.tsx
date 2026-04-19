@@ -10,14 +10,14 @@ import {
     Users, Activity, Building2, ShieldCheck, Coins,
     Database, ActivitySquare, Cpu, Search, Plus, Settings,
     LayoutDashboard, Globe, AlertCircle, TrendingUp, HardHat, Compass,
-    Zap, Pickaxe, Diamond, Layers, Truck, Package, ShieldAlert
+    Zap, Pickaxe, Diamond, Layers, Truck, Package, ShieldAlert, Loader2, Phone
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
 export default function SuperAdminDashboard() {
-  const { profile } = useAuth()
+  const { profile, loading } = useAuth()
   const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState("")
   const [showNewOrg, setShowNewOrg] = useState(false)
@@ -33,14 +33,21 @@ export default function SuperAdminDashboard() {
 
   // Companies loaded from Supabase
   const [companies, setCompanies] = useState<any[]>([])
+  const [leads, setLeads] = useState<any[]>([])
+  const [consultantFlagEnabled, setConsultantFlagEnabled] = useState(false)
+  const [selcomFlagEnabled, setSelcomFlagEnabled] = useState(false)
+  const [whatsappFlagEnabled, setWhatsappFlagEnabled] = useState(false)
+  const [flagLoading, setFlagLoading] = useState(false)
 
   // Load real companies from Supabase on mount
   React.useEffect(() => {
+    if (loading || !profile) return
+
     const load = async () => {
       const supabase = getSupabaseBrowserClient()
       const { data } = await supabase
         .from("companies")
-        .select("id, name, enabled_modules, status")
+        .select("id, name, status, category")
         .order("created_at", { ascending: false })
         .limit(50)
       if (data) {
@@ -48,18 +55,57 @@ export default function SuperAdminDashboard() {
           ...c,
           nodes: 0,
           size: "—",
-          plan: "Medium Scale",
-          type: "ENTERPRISE",
+          plan: c.category === 'SMALL_SCALE' ? "Small Scale" : "Medium Scale",
+          type: c.category === 'SMALL_SCALE' ? "CHIMBO" : "ENTERPRISE",
           status: c.status || "Active",
         })))
       }
+
+      const { data: leadsData } = await supabase
+        .from("contact_submissions")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20)
+      if (leadsData) setLeads(leadsData)
     }
     load()
-  }, [])
+
+    // Load feature flags
+    const loadFlags = async () => {
+      const supabase = getSupabaseBrowserClient()
+      const { data } = await supabase
+        .from('system_flags')
+        .select('flag_name, is_enabled')
+      
+      if (data) {
+        data.forEach(flag => {
+          if (flag.flag_name === 'show_consultant_pricing') setConsultantFlagEnabled(flag.is_enabled)
+          if (flag.flag_name === 'enable_selcom') setSelcomFlagEnabled(flag.is_enabled)
+          if (flag.flag_name === 'enable_whatsapp_api') setWhatsappFlagEnabled(flag.is_enabled)
+        })
+      }
+    }
+    loadFlags()
+  }, [loading, profile])
 
   const vibe = () => { if (typeof navigator !== 'undefined') navigator.vibrate?.(40) }
   
-  // Ensure this page is strictly for SUPER_ADMIN
+  // Additional state hooks MUST be above early returns
+  const [selectedCompany, setSelectedCompany] = useState<any>(null)
+  const [modulesModalOpen, setModulesModalOpen] = useState(false)
+  const [activeModules, setActiveModules] = useState<string[]>([])
+
+  // 1. Show nothing or a skeleton while loading to prevent 'Clearance Denied' flash
+  if (loading) {
+    return (
+        <div className="flex h-[80vh] items-center justify-center flex-col gap-4">
+            <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+            <p className="text-xs font-black uppercase tracking-widest text-slate-400">Verifying System Clearance...</p>
+        </div>
+    )
+  }
+
+  // 2. Ensure this page is strictly for SUPER_ADMIN
   if (profile?.role !== 'SUPER_ADMIN') {
       return (
           <div className="flex h-[80vh] items-center justify-center flex-col gap-4">
@@ -70,9 +116,6 @@ export default function SuperAdminDashboard() {
       )
   }
 
-  const [selectedCompany, setSelectedCompany] = useState<any>(null)
-  const [modulesModalOpen, setModulesModalOpen] = useState(false)
-  const [activeModules, setActiveModules] = useState<string[]>([])
 
   const ALL_MODULES = [
     { id: "blasting", label: "Blasting Operations", icon: Zap },
@@ -184,8 +227,17 @@ export default function SuperAdminDashboard() {
           
           window.open('/chimbo/dashboard', '_blank')
       } else {
-          // For Medium Scale, we redirect to the main admin dashboard
-          // The app will recognize the Super Admin role and we can potentially add a company_id override in session
+          // For Medium Scale, we rewrite the Super Admin cookie to temporarily target THIS specific company.
+          // This allows the Super Admin to seamlessly hop between different Medium Scale miners
+          // and the system will naturally enforce their specific subscribed modules.
+          const syncData = {
+              role: "SUPER_ADMIN",
+              cid: company.id,
+              mods: company.enabled_modules || ["blasting", "drilling", "fleet", "inventory", "safety", "material-handling"],
+              ts: Date.now()
+          }
+          document.cookie = `msm_user_role=${encodeURIComponent(JSON.stringify(syncData))}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`
+          
           window.open('/admin', '_blank')
       }
   }
@@ -259,9 +311,52 @@ export default function SuperAdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-2">
-        {/* MANAGEMENT TABLE */}
-        <Card className="lg:col-span-2 border shadow-2xl rounded-[2.5rem] overflow-hidden border-slate-100 bg-white">
-          <CardHeader className="bg-slate-50/50 border-b p-8">
+        <div className="lg:col-span-2 space-y-6">
+          {/* LEADS / INBOX SECTION */}
+          {(leads.length > 0 || true) && (
+            <Card className="border shadow-2xl rounded-[2.5rem] overflow-hidden border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5">
+              <CardHeader className="bg-amber-500/10 border-b border-amber-500/20 p-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/30">
+                    <ActivitySquare className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-black uppercase tracking-tight text-amber-900 dark:text-amber-500">Inbound Registrations</CardTitle>
+                    <p className="text-[10px] font-bold text-amber-700/60 uppercase tracking-widest mt-0.5">Maombi Mapya Kutoka Nje</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {leads.length === 0 ? (
+                  <div className="p-8 text-center text-xs font-bold uppercase tracking-widest text-slate-400">Hakuna Maombi Mapya</div>
+                ) : (
+                  <div className="divide-y divide-amber-500/10">
+                    {leads.map((lead, idx) => (
+                      <div key={idx} className="p-6 hover:bg-white/50 dark:hover:bg-slate-900/50 transition-colors flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-black text-slate-900 dark:text-white text-sm uppercase">{lead.full_name}</h4>
+                            <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 border-0 text-[8px] uppercase tracking-widest">{lead.company_type}</Badge>
+                          </div>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2"><Phone className="w-3 h-3 inline pb-0.5" /> {lead.phone_number}</p>
+                          {lead.message && (
+                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 italic bg-amber-500/5 p-3 rounded-xl border border-amber-500/10">"{lead.message}"</p>
+                          )}
+                        </div>
+                        <Button onClick={() => { vibe(); setNewOrg({...newOrg, name: lead.full_name, phone: lead.phone_number, category: lead.company_type.includes('Mdogo') ? 'SMALL_SCALE' : 'MEDIUM_SCALE'}); setShowNewOrg(true); }} className="h-10 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black uppercase text-[9px] tracking-widest shadow-xl whitespace-nowrap shrink-0">
+                          PROVISION NOW
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* MANAGEMENT TABLE */}
+          <Card className="border shadow-2xl rounded-[2.5rem] overflow-hidden border-slate-100 bg-white">
+            <CardHeader className="bg-slate-50/50 border-b p-8">
              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div>
                    <CardTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-3 text-slate-900">
@@ -326,6 +421,12 @@ export default function SuperAdminDashboard() {
                                     <LayoutDashboard className="w-3.5 h-3.5 text-blue-500" />
                                     Launch Controller
                                 </Button>
+                                <a href={`/super-admin/companies/${company.id}/subscription`} target="_blank" rel="noreferrer">
+                                    <Button variant="ghost" size="sm"
+                                        className="h-10 px-3 rounded-xl hover:bg-amber-100 hover:text-amber-700 font-black text-[9px] uppercase tracking-widest flex items-center gap-1.5 border border-amber-100 shadow-sm">
+                                        <Coins className="w-3.5 h-3.5 text-amber-500" />Bei / Subscription
+                                    </Button>
+                                </a>
                                 
                                 <Button 
                                     variant="ghost" 
@@ -342,6 +443,7 @@ export default function SuperAdminDashboard() {
           </CardContent>
    
         </Card>
+        </div>
 
         {/* ── MODULES MANAGEMENT MODAL ── */}
         {modulesModalOpen && (
@@ -423,10 +525,10 @@ export default function SuperAdminDashboard() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {[
-                        { label: "Medium Scale", count: 4, color: "bg-blue-500", icon: Building2 },
-                        { label: "Contractors", count: 12, color: "bg-indigo-500", icon: LayoutDashboard },
-                        { label: "Consultants", count: 8, color: "bg-slate-800", icon: Compass },
-                        { label: "Small Scale", count: 1245, color: "bg-amber-500", icon: HardHat }
+                        { label: "Medium Scale", count: companies.filter(c => c.category === 'MEDIUM_SCALE').length || 0, color: "bg-blue-500", icon: Building2 },
+                        { label: "Contractors", count: 0, color: "bg-indigo-500", icon: LayoutDashboard },
+                        { label: "Consultants", count: 0, color: "bg-slate-800", icon: Compass },
+                        { label: "Small Scale", count: companies.filter(c => c.category === 'SMALL_SCALE').length || 0, color: "bg-amber-500", icon: HardHat }
                     ].map((tier, i) => (
                         <div key={i} className="flex items-center gap-4">
                             <div className={`w-8 h-8 rounded-lg ${tier.color} flex items-center justify-center shrink-0`}>
@@ -460,11 +562,11 @@ export default function SuperAdminDashboard() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-white/5 p-4 rounded-3xl border border-white/10">
                             <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">2FA Compliance</p>
-                            <p className="text-xl font-black text-white">92.4%</p>
+                            <p className="text-xl font-black text-white">100%</p>
                         </div>
                         <div className="bg-white/5 p-4 rounded-3xl border border-white/10">
                             <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Bound Devices</p>
-                            <p className="text-xl font-black text-white">1,542</p>
+                            <p className="text-xl font-black text-white">0</p>
                         </div>
                     </div>
                     
@@ -473,23 +575,7 @@ export default function SuperAdminDashboard() {
                            <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-500">Live Security Stream</h4>
                            <span className="text-[8px] font-bold text-blue-500 uppercase animate-pulse">Monitoring...</span>
                         </div>
-                        {[
-                            { msg: "Accountant Device Verified", org: "Barrick", time: "2m", alert: false },
-                            { msg: "Unauthorized Login Blocked", org: "Mzee Maulid", time: "14m", alert: true },
-                            { msg: "TOTP Sync Successful", org: "AngloGold", time: "1h", alert: false },
-                            { msg: "New Admin Bound", org: "Twiga", time: "2h", alert: false }
-                        ].map((log, i) => (
-                            <div key={i} className="flex items-center justify-between gap-4 group">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${log.alert ? 'bg-red-500 animate-ping' : 'bg-emerald-500'}`} />
-                                    <div>
-                                       <p className={`text-[10px] font-bold ${log.alert ? 'text-red-400' : 'text-slate-300'}`}>{log.msg}</p>
-                                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">{log.org}</p>
-                                    </div>
-                                </div>
-                                <span className="text-[8px] font-black text-slate-600 uppercase group-hover:text-slate-400 transition-colors">{log.time}</span>
-                            </div>
-                        ))}
+                        {[]}
                     </div>
                     
                     <Button onClick={() => { vibe(); toast({title: "Global Audit Enqueued", description: "Verifying checksums for all client vaults..."}) }} className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-500/20">
@@ -585,6 +671,136 @@ export default function SuperAdminDashboard() {
                         >
                             Backup SQL
                         </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* ── FEATURE FLAGS ── */}
+            <Card className="border shadow-2xl rounded-[2.5rem] overflow-hidden border-slate-100 bg-white">
+                <CardHeader className="pb-2 p-8">
+                    <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-amber-500" /> Feature Flags
+                    </CardTitle>
+                    <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                        Washa/Zima vipengele bila kudeployi upya
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 pt-0 space-y-4">
+                    {/* Consultant Pricing Card Flag */}
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div className="space-y-0.5">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-700">
+                                Onyesha Kadi ya Mshauri
+                            </p>
+                            <p className="text-[9px] font-bold text-slate-400">
+                                Kwenye Landing Page · Imepangwa: Aprili 2027
+                            </p>
+                        </div>
+                        <button
+                            onClick={async () => {
+                                setFlagLoading(true)
+                                vibe()
+                                try {
+                                    const supabase = getSupabaseBrowserClient()
+                                    const newVal = !consultantFlagEnabled
+                                    await supabase.from('system_flags')
+                                        .upsert({ flag_name: 'show_consultant_pricing', is_enabled: newVal, updated_at: new Date().toISOString() }, { onConflict: 'flag_name' })
+                                    setConsultantFlagEnabled(newVal)
+                                    toast({ title: newVal ? "✅ Imewashwa" : "⛔ Imezimwa", description: `Kadi ya Mshauri ${newVal ? 'inaonekana' : 'haionekani'} kwenye Landing Page.` })
+                                } catch (e: any) {
+                                    toast({ title: "Kosa", description: e.message, variant: "destructive" })
+                                } finally {
+                                    setFlagLoading(false)
+                                }
+                            }}
+                            disabled={flagLoading}
+                            className={`relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none ${consultantFlagEnabled ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' : 'bg-slate-300'}`}
+                        >
+                            <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300 ${consultantFlagEnabled ? 'left-8' : 'left-1'}`} />
+                        </button>
+                    </div>
+
+                    {/* Selcom Payments Flag */}
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div className="space-y-0.5">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-700">
+                                Washa Malipo ya Selcom
+                            </p>
+                            <p className="text-[9px] font-bold text-slate-400">
+                                M-Pesa, Tigo, Airtel & Cards (Automated)
+                            </p>
+                        </div>
+                        <button
+                            onClick={async () => {
+                                setFlagLoading(true)
+                                vibe()
+                                try {
+                                    const supabase = getSupabaseBrowserClient()
+                                    const newVal = !selcomFlagEnabled
+                                    await supabase.from('system_flags')
+                                        .upsert({ flag_name: 'enable_selcom', is_enabled: newVal, updated_at: new Date().toISOString() }, { onConflict: 'flag_name' })
+                                    setSelcomFlagEnabled(newVal)
+                                    toast({ title: newVal ? "✅ Selcom Imewashwa" : "⛔ Selcom Imezimwa", description: `Wateja ${newVal ? 'wanaweza' : 'hawawezi'} kulipa kwa Selcom sasa.` })
+                                } catch (e: any) {
+                                    toast({ title: "Kosa", description: e.message, variant: "destructive" })
+                                } finally {
+                                    setFlagLoading(false)
+                                }
+                            }}
+                            disabled={flagLoading}
+                            className={`relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none ${selcomFlagEnabled ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-slate-300'}`}
+                        >
+                            <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300 ${selcomFlagEnabled ? 'left-8' : 'left-1'}`} />
+                        </button>
+                    </div>
+
+                    {/* WhatsApp Business API Flag */}
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div className="space-y-0.5">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-700">
+                                WhatsApp Automated API
+                            </p>
+                            <p className="text-[9px] font-bold text-slate-400">
+                                Tuma Invoice & Alerts kiotomatiki
+                            </p>
+                        </div>
+                        <button
+                            onClick={async () => {
+                                setFlagLoading(true)
+                                vibe()
+                                try {
+                                    const supabase = getSupabaseBrowserClient()
+                                    const newVal = !whatsappFlagEnabled
+                                    await supabase.from('system_flags')
+                                        .upsert({ flag_name: 'enable_whatsapp_api', is_enabled: newVal, updated_at: new Date().toISOString() }, { onConflict: 'flag_name' })
+                                    setWhatsappFlagEnabled(newVal)
+                                    toast({ title: newVal ? "✅ WhatsApp API Imewashwa" : "⛔ WhatsApp API Imezimwa", description: `Ujumbe ${newVal ? 'utatumwa' : 'hautatumwa'} kiotomatiki sasa.` })
+                                } catch (e: any) {
+                                    toast({ title: "Kosa", description: e.message, variant: "destructive" })
+                                } finally {
+                                    setFlagLoading(false)
+                                }
+                            }}
+                            disabled={flagLoading}
+                            className={`relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none ${whatsappFlagEnabled ? 'bg-emerald-600 shadow-lg shadow-emerald-500/30' : 'bg-slate-300'}`}
+                        >
+                            <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300 ${whatsappFlagEnabled ? 'left-8' : 'left-1'}`} />
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-2">
+                        <div className={`w-2 h-2 rounded-full ${consultantFlagEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${consultantFlagEnabled ? 'text-emerald-600' : 'text-slate-400'}`}>
+                            {consultantFlagEnabled ? 'Mshauri: ON' : 'Mshauri: OFF'}
+                        </span>
+                        <span className="mx-1 text-slate-300">|</span>
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${selcomFlagEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
+                            Selcom: {selcomFlagEnabled ? 'LIVE' : 'OFF'}
+                        </span>
+                        <span className="mx-1 text-slate-300">|</span>
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${whatsappFlagEnabled ? 'text-emerald-600' : 'text-slate-400'}`}>
+                            WhatsApp: {whatsappFlagEnabled ? 'AUTO' : 'OFF'}
+                        </span>
                     </div>
                 </CardContent>
             </Card>

@@ -14,7 +14,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // Define routes that should strictly hide the backend structural layout
-  const isPublicRoute = pathname === "/" || pathname?.startsWith("/auth") || pathname?.startsWith("/landing") || pathname?.startsWith("/chimbo")
+  const isPublicRoute = pathname === "/" || pathname?.startsWith("/auth") || pathname?.startsWith("/landing") || pathname?.startsWith("/chimbo") || pathname?.startsWith("/gate")
 
   if (isPublicRoute) {
     return (

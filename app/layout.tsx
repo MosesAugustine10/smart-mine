@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning className={cn("h-full antialiased", "font-sans", geist.variable)}>
-      <body className={`${geist.className} min-h-screen flex flex-col overflow-hidden`}>
+      <body suppressHydrationWarning className={`${geist.className} min-h-screen flex flex-col overflow-hidden`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

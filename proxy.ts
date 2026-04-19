@@ -30,10 +30,12 @@ const RBAC_RULES: Record<string, string[]> = {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const cachedRole = request.cookies.get("msm_user_role")?.value
 
-  // 1. PUBLIC ROUTES — always allow (including Small Scale Landing/Auth)
+  // 1. PUBLIC ROUTES — Performance Fast Path
   if (
     pathname === "/" ||
+    pathname === "/gate" ||
     pathname === "/unauthorized" ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/api") ||
@@ -42,68 +44,77 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.match(/\.(svg|png|jpg|jpeg|gif|webp|woff2?|ttf|ico|css|js)$/)
   ) {
+    // REDIRECT LOGGED IN SUPER ADMIN AWAY FROM PUBLIC/CLIENT PAGES
+    if (cachedRole) {
+      try {
+        const decoded = decodeURIComponent(cachedRole)
+        const role = decoded.startsWith('{') ? JSON.parse(decoded).role : decoded
+        if (role?.toUpperCase() === "SUPER_ADMIN") {
+          if (pathname === "/auth/login") {
+            return NextResponse.redirect(new URL("/super-admin", request.url))
+          }
+        }
+      } catch (e) {}
+    }
     return NextResponse.next()
   }
-
-  // 2. CHECK ROLE CACHE (COOKIE) — SPEED UP BY ~900ms
-  const cachedRole = request.cookies.get("msm_user_role")?.value
   
-  // 3. REAL AUTH CHECK via Supabase
+  // 2. REAL AUTH CHECK via Supabase
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  let supabaseResponse = NextResponse.next({ request })
+  const supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() { return request.cookies.getAll() },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-        supabaseResponse = NextResponse.next({ request })
         cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
       },
     },
   })
 
-  // Get session - lightweight (from JWT)
+  // getSession is fast (reads JWT from cookie)
   const { data: { session } } = await supabase.auth.getSession()
 
   if (!session) {
-    if (pathname.startsWith("/chimbo")) {
-      return NextResponse.redirect(new URL("/chimbo", request.url))
-    }
+    if (pathname.startsWith("/chimbo")) return NextResponse.redirect(new URL("/chimbo", request.url))
+    if (pathname.startsWith("/super-admin")) return NextResponse.redirect(new URL("/gate", request.url))
     return NextResponse.redirect(new URL("/auth/login", request.url))
   }
 
-  // 4. ROLE DETERMINATION (Cache-First)
-  let userRole: string = cachedRole || ""
+  // 3. ROLE DETERMINATION (Sync-First)
+  let userRole: string = ""
+  if (cachedRole) {
+    try {
+      const decoded = decodeURIComponent(cachedRole)
+      if (decoded.startsWith('{')) userRole = JSON.parse(decoded).role
+      else userRole = decoded
+    } catch { userRole = cachedRole }
+  }
 
   if (!userRole) {
-    // Falls back to DB only if cache is missing
+    // Resilient query: we fetch the role first, and then company data if possible
     const { data: profile } = await supabase
       .from("user_profiles")
-      .select("role")
+      .select("role, company_id")
       .eq("id", session.user.id)
       .maybeSingle()
     
     userRole = profile?.role || "Guest"
-    
-    // Set cookie for next request (expires in 24h)
-    supabaseResponse.cookies.set("msm_user_role", userRole, { 
-        maxAge: 60 * 60 * 24,
-        path: "/",
-        sameSite: "lax"
-    })
+    const syncData = { role: userRole, cid: profile?.company_id, mods: [], ts: Date.now() }
+    supabaseResponse.cookies.set("msm_user_role", JSON.stringify(syncData), { maxAge: 60 * 60 * 24, path: "/", sameSite: "lax" })
   }
 
-  // 5. SUPER ADMIN BYPASS - FAST TRACK
-  if (userRole === "SUPER_ADMIN") {
+  // 4. SUPER ADMIN BYPASS - Send to dedicated door if they try to use client routes
+  if (userRole.toUpperCase() === "SUPER_ADMIN") {
     if (pathname === "/" || pathname === "/admin" || pathname === "/home" || pathname === "/auth/login") {
       return NextResponse.redirect(new URL("/super-admin", request.url))
     }
     return supabaseResponse
   }
 
-  // 6. ROUTE PROTECTION (Based on RBAC_RULES)
+  // 5. ROUTE PROTECTION (Based on RBAC_RULES)
   for (const [route, allowedRoles] of Object.entries(RBAC_RULES)) {
     if (pathname.startsWith(route) && !allowedRoles.includes(userRole)) {
       return NextResponse.redirect(new URL("/unauthorized", request.url))
