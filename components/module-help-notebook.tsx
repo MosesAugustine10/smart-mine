@@ -2,7 +2,7 @@
 
 import React from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { BookOpen, FileText, Download, Info, CheckCircle2, Bomb, Drill, Truck, Shield, Landmark, Map, Box } from "lucide-react"
+import { BookOpen, FileText, Download, Info, CheckCircle2, Bomb, Drill, Truck, Shield, Landmark, Map, Box, Crown, FlaskConical, Pickaxe, DollarSign, Users, Fuel } from "lucide-react"
 
 interface HelpContent {
     sw: {
@@ -19,82 +19,212 @@ interface HelpContent {
 }
 
 const MODULE_HELP_REGISTRY: Record<string, HelpContent> = {
+    "Dashboard": {
+        icon: Landmark,
+        sw: {
+            purpose: "Hiki nio kituo kikuu cha amri (Command Center) kinachotoa muonekano wa jumla wa utendaji kazi wa mgodi kwa wakati halisi (Real-time).",
+            efficiency: "Inaunganisha data kutoka moduli zote ili kutoa takwimu muhimu (KPIs) zinazosaidia uamuzi wa haraka wa usimamizi.",
+            pro_tips: ["Fuatilia chati za uzalishaji kila asubuhi kubaini mapungufu mapema.", "Linganisha malengo ya mwezi (Targets) dhidi ya utekelezaji halisi."]
+        },
+        en: {
+            purpose: "Centralized operational command center providing a high-fidelity overview of enterprise performance metrics in real-time.",
+            efficiency: "Aggregates cross-modular data into actionable Key Performance Indicators (KPIs) to facilitate rapid decision-making.",
+            pro_tips: ["Analyze production variants daily to identify operational bottlenecks.", "Compare monthly strategic targets against actual site output for performance auditing."]
+        }
+    },
     "Blasting": {
         icon: Bomb,
         sw: {
-            purpose: "Moduli hii inatumika kurekodi mipango na utekelezaji wa ulipuaji (blasting). Inahifadhi idadi ya mashimo (holes), kiasi cha vilipuzi (explosives), na 'powder factor'.",
-            efficiency: "Inasaidia kukokotoa gharama ya ulipuaji kwa kila tani (cost per tonne) na kuzuia upotevu wa vilipuzi.",
-            pro_tips: ["Hakikisha umeingiza 'Powder Factor' baada ya kila mlipuko.", "Weka saini ya msimamizi (supervisor) ili kuhalalisha rekodi."]
+            purpose: "Moduli ya usimamizi wa vilipuzi na mipango ya milipuko. Inarekodi 'hole patterns', 'loading sheets', na matokeo ya uvunjaji wa miamba (fragmentation).",
+            efficiency: "Inapunguza gharama kwa kudhibiti 'Powder Factor' na kuhakikisha matumizi sahihi ya baruti kulingana na aina ya mwamba.",
+            pro_tips: ["Kagua ripoti ya 'Misfire' na hatua za usalama zilizochukuliwa.", "Rekodi 'Vibration levels' ili kuhakikisha usalama wa mazingira yanayozunguka."]
         },
         en: {
-            purpose: "This module serves as the primary registry for blasting logistics, hole layout parameters, and explosive fragmentation metrics.",
-            efficiency: "Enable real-time Powder Factor tracking and cost optimization per cubic meter of blasted material.",
-            pro_tips: ["Cross-verify explosive quantity against hole depth records.", "Monitor cost-per-tonne trends in the dashboard to identify operational leaks."]
+            purpose: "Industrial ledger for explosive logistics, blast pattern design, and rock fragmentation efficiency tracking.",
+            efficiency: "Optimizes operational expenditure (OPEX) by monitoring Powder Factor and ensuring precision explosive distribution.",
+            pro_tips: ["Document post-blast fragmentation quality to optimize downstream crushing efficiency.", "Maintain strict compliance records for explosive magazine withdrawals."]
         }
     },
     "Drilling": {
         icon: Drill,
         sw: {
-            purpose: "Hapa ndipo unapoingiza taarifa za uchorongaji (drilling), ikiwemo namba ya mashine, urefu wa mashimo (depth), na namba ya fimbo (rods) zilizopigwa.",
-            efficiency: "Inafuatilia ufanisi wa kila mashine na mchorongaji (driller) kwa wakati halisi.",
-            pro_tips: ["Weka idadi kamili ya 'rods' zilizotumika kwa kila shimo.", "Fuatilia muda wa mashine kusimama (downtime) kuzuia upotevu wa muda."]
+            purpose: "Mfumo wa kufuatilia uchorongaji (RC/Blast hole). Inasimamia kina cha mashimo, matumizi ya nondo (rods), na telemetry ya mashine.",
+            efficiency: "Inaongeza tija kwa kulinganisha 'Planned vs Actual depth' na kufuatilia muda wa mashine kusimama (Downtime).",
+            pro_tips: ["Rekodi 'Penetration Rate' ili kujua ugumu wa miamba na afya ya 'drill bits'.", "Hifadhi taarifa za matengenezo (Service) kuzuia uharibifu mkubwa wa mitambo."]
         },
         en: {
-            purpose: "Strategic command center for drilling operations, monitoring technical penetration rates, machine telemetry, and rod consumption.",
-            efficiency: "Track Machine Availability vs. Utilization (MA vs UA) for better lifecycle management.",
-            pro_tips: ["Log downtime minutes accurately to improve fleet maintenance scheduling.", "Validate driller name against regional personnel directory."]
+            purpose: "Precision tracking system for RC and Blast-hole drilling operations, monitoring depth accuracy and machine telemetry.",
+            efficiency: "Enhances productivity by auditing Planned vs. Actual drilling depth and analyzing machine availability/utilization (UA/MA).",
+            pro_tips: ["Monitor penetration rates to assess geological hardness and bit lifecycle wear.", "Execute proactive maintenance requests directly from the drilling field log."]
         }
     },
-    "Haulage / Material": {
+    "Diamond Drilling": {
+        icon: Drill,
+        sw: {
+            purpose: "Moduli mahususi kwa ajili ya uchorongaji wa 'Core'. Inafuatilia 'Core Recovery', 'RQD', na uwekaji wa alama kwenye masanduku ya 'core'.",
+            efficiency: "Inahakikisha ubora wa data za kijiolojia unazingatiwa ili kutoa makadirio sahihi ya rasilimali (Resource Estimation).",
+            pro_tips: ["Hakikisha 'Core orientation' imerekodiwa kwa usahihi kwa ajili ya uchambuzi wa miundo.", "Fuatilia matumizi ya maji na kemikali wakati wa uchorongaji."]
+        },
+        en: {
+            purpose: "Advanced interface for diamond core drilling, managing lithological recovery, RQD metrics, and core box logistics.",
+            efficiency: "Ensures high-integrity geological data capture, critical for high-confidence resource estimation and modeling.",
+            pro_tips: ["Verify core orientation markers regularly to ensure structural analysis accuracy.", "Monitor core loss zones to adjust drilling parameters in complex stratigraphic layers."]
+        }
+    },
+    "Fleet": {
         icon: Truck,
         sw: {
-            purpose: "Moduli hii inahusika na ubebaji wa mawe au mchanga (material handling). Inarekodi safari za malori na ufanisi wa kupakia (loading efficiency).",
-            efficiency: "Inasaidia kujua kiasi kamili cha tani zilizosafirishwa kwenda 'crusher' au sehemu ya kuhifadhi.",
-            pro_tips: ["Weka ufanisi wa mafuta (fuel efficiency) kwa kila lita.", "Gonga saini ya dereva ili kuthibitisha safari."]
+            purpose: "Kituo cha usimamizi wa mitambo na magari mazito (Earthmoving equipment). Inasimamia mafuta, matairi, na saa za kazi (Run hours).",
+            efficiency: "Inapunguza gharama za uendeshaji kwa kuhakikisha mitambo inafanyiwa 'Preventive Maintenance' kwa wakati.",
+            pro_tips: ["Fuatilia 'Payload' kuzuia kubebesha magari mzigo mkubwa kupita kiasi (Overloading).", "Linganisha matumizi ya mafuta kati ya madereva tofauti kubaini ufanisi."]
         },
         en: {
-            purpose: "Operations ledger for haulage logistics, material flow tracking, and vehicle dispatch metrics.",
-            efficiency: "Monitor Tonne-Kilometer-Per-Hour (TKPH) and fuel consumption versus production output.",
-            pro_tips: ["Record load count vs payload weight for accurate tonnage calculation.", "Monitor vehicle operational status directly from the fleet dashboard."]
+            purpose: "Logistics hub for heavy earthmoving equipment (HME) management, tracking fuel, tires, and machine service hours.",
+            efficiency: "Reduces OPEX through synchronized preventive maintenance scheduling and real-time fleet health monitoring.",
+            pro_tips: ["Audit cycles times and payload distribution to optimize haulage lane productivity.", "Analyze fuel burn rates per machine category to identify legacy inefficiencies."]
         }
     },
-    "Safety (HSSE)": {
-        icon: Shield,
+    "Material Handling": {
+        icon: Box,
         sw: {
-            purpose: "Moduli muhimu zaidi kwa ajili ya kulinda maisha na vifaa. Inarekodi ajali, nusura-ajali (near misses), na ukaguzi wa usalama.",
-            efficiency: "Inasaidia kupunguza hatari (risk) na kuhakikisha mgodi unafuata sheria za usalama (Occupational Safety).",
-            pro_tips: ["Ripoti 'Near Misses' haraka kabla hazijawa ajali kamili.", "Tumia ripoti za usalama kuimarisha mafunzo ya wafanyakazi."]
+            purpose: "Inasimamia mzunguko wa madini kutoka shimoni (Pit) kwenda kwenye maghala au mitambo ya uchenjuaji (Processing Plant).",
+            efficiency: "Inatoa takwimi sahihi za 'Stockpile' na kuzuia upotevu wa madini wakati wa usafirishaji.",
+            pro_tips: ["Tumia ripoti za 'Load count' kuhakikisha tani zinazopelekwa crusher zinalingana na zilizotoka pit.", "Weka alama (Tags) kwa kila stockpile kando ya aina ya mawe (Grade)."]
         },
         en: {
-            purpose: "Command interface for Health, Safety, Security, and Environment (HSSE) governance and incident reporting.",
-            efficiency: "Enable predictive risk analysis based on near-miss frequency and PPE compliance audits.",
-            pro_tips: ["Incident reporting should include photographic evidence for root cause analysis.", "Track LTIFR (Lost Time Injury Frequency Rate) in the global dashboard."]
-        }
-    },
-    "Finance / Billing": {
-        icon: Landmark,
-        sw: {
-            purpose: "Sehemu ya kusimamia mapato na matumizi. Hapa ndipo unaandaa ankara (invoices), unarekodi malipo, na kufuatilia faida.",
-            efficiency: "Inahakikisha hakuna ankara inayopotea na inatoa ripoti kamili kwa ajili ya wawekezaji au TRA.",
-            pro_tips: ["Chagua 'Brand' sahihi kama unatoa ankara kwa kupitia kampuni nyingine.", "Pakua ripoti ya XLSX kwa ajili ya uhasibu zaidi."]
-        },
-        en: {
-            purpose: "Enterprise Financial Ledger for high-value billing, invoice lifecycle management, and revenue intelligence.",
-            efficiency: "Automated VAT calculations and multi-branding support for professional white-labeled reports.",
-            pro_tips: ["Utilize the Brand Selector to toggle between different front-company identities for reports.", "Monitor aging invoices in the dashboard to improve cash flow."]
+            purpose: "Material flow control system tracking ore movement from the pit face to stockpiles and the processing facility.",
+            efficiency: "Ensures accurate stockpile reconciliation and prevents grade dilution during haulage logistics.",
+            pro_tips: ["Reconcile load counts against weighed tonnage for true logistical accuracy.", "Implement rigorous stockpile tagging based on lithological grade and source location."]
         }
     },
     "Inventory": {
         icon: Box,
         sw: {
-            purpose: "Dira ya stoo na ghala. Hapa unafuatilia vifaa vilivyopo, vilivyotumika, na kuhakikisha vifaa muhimu (spare parts) havishi.",
-            efficiency: "Inakupa 'Warning' vifaa vinapopungua (Low Stock) ili usiwasilishe maombi kwa kuchelewa.",
-            pro_tips: ["Weka 'Minimum Stock' kwa kila kifaa ili upewe taarifa mapema.", "Fanya ulinganisho (Stock-take) kila wiki dhidi ya mfumo."]
+            purpose: "Moduli ya usimamizi wa ghala (Warehouse). Inasimamia ununuzi, utoaji, na uhifadhi wa vifaa vya mgodi.",
+            efficiency: "Inahakikisha hakuna kusimama kwa kazi kwa kukosa vifaa ('Out of stock') kupitia 'Minimum Stock Alerts'.",
+            pro_tips: ["Fanya 'Periodic Stock Counts' kuhakikisha bidhaa zilizopo stoo zinalingana na mfumo.", "Panga vifaa kwa makundi (Categories) ili kurahisisha utafutaji."]
         },
         en: {
-            purpose: "Supply Chain & Multi-Warehouse Inventory Control for critical spares and high-frequency consumables.",
-            efficiency: "Automated stock alerts and consumption rate tracking based on operational withdrawals.",
-            pro_tips: ["Categorize items for better financial reporting on expenditures.", "Monitor Lead Time for critical spares to prevent machine downtime."]
+            purpose: "Enterprise Warehouse Management System (WMS) for procurement, distribution, and critical spares control.",
+            efficiency: "Eliminates operational downtime by enforcing safety stock levels and automated reorder point alerts.",
+            pro_tips: ["Standardize periodic physical stock reconciliation to eliminate inventory shrinkage.", "Leverage ABC analysis to prioritize management of high-value mining consumables."]
+        }
+    },
+    "Geophysics": {
+        icon: Map,
+        sw: {
+            purpose: "Mfumo wa kuhifadhi na kuchambua data za utafiti wa ardhi (Seismic, IP, Mag). Inasaidia kuainisha maeneo mapya yenye madini.",
+            efficiency: "Inarahisisha kazi ya wanajiolojia kwa kutoa taswira ya miamba iliyo chini ya ardhi bila kuchimba.",
+            pro_tips: ["Hakikisha 'GPS coordinates' za kila kituo cha utafiti zimeingizwa kwa usahihi.", "Linganisha data za IP na matokeo ya uchorongaji (Assay) ili kurekebisha ramani."]
+        },
+        en: {
+            purpose: "Analytical store for geophysical survey data (Seismic, Induced Polarization, Magnetics) for advanced target generation.",
+            efficiency: "Streamlines exploration workflows by providing subterranean lithological visualizations for targeted drilling.",
+            pro_tips: ["Strictly validate spatial GPS coordinates for each survey station to ensure grid integrity.", "Correlate IP anomalies with drilling assays to refine the predictive geological model."]
+        }
+    },
+    "Assay": {
+        icon: FlaskConical,
+        sw: {
+            purpose: "Moduli ya maabara. Inasimamia matokeo ya uchenjuaji wa sampuli na kuhakikisha ubora (QA/QC) unazingatiwa.",
+            efficiency: "Inatoa majibu ya haraka kuhusu kiasi cha madini (Grade) kilichopo kwenye mawe yaliyovunwa.",
+            pro_tips: ["Weka 'Standards' na 'Blanks' kwenye kila kundi la sampuli ili kuhakiki usahihi wa maabara.", "Fuatilia 'Duplicate samples' kuona utofauti wa majibu."]
+        },
+        en: {
+            purpose: "Laboratory Information Management System (LIMS) for managing geochemical assays and QA/QC validation protocols.",
+            efficiency: "Facilitates rapid grade control and strategic decision-making through high-fidelity sample processing logs.",
+            pro_tips: ["Enforce rigorous insertion of standards, blanks, and duplicates to validate analytical precision.", "Monitor laboratory turnaround time (TAT) to prevent operational delays in ore extraction."]
+        }
+    },
+    "Finance": {
+        icon: Landmark,
+        sw: {
+            purpose: "Mfumo wa uhasibu wa mgodi. Inasimamia Invoices, malipo ya wakandarasi, na mzunguko wa fedha (Cash Flow).",
+            efficiency: "Inahakikisha udhibiti wa fedha na kusaidia katika kuandaa ripoti za kodi na faida ya kampuni.",
+            pro_tips: ["Kagua ripoti ya 'Aging Invoices' kila wiki ili kudhibiti idadi ya madeni.", "Weka viambatisho vya risiti (E-receipts) kwa kila muamala wa matumizi."]
+        },
+        en: {
+            purpose: "Strategic financial ledger for Capex/Opex tracking, contractor invoicing, and enterprise revenue intelligence.",
+            efficiency: "Ensures fiscal compliance and real-time cash flow visibility for executive stakeholders and auditors.",
+            pro_tips: ["Audit the Aging Invoice report weekly to minimize outstanding liabilities.", "Attach digital tax-compliant receipts to every expenditure entry for seamless auditing."]
+        }
+    },
+    "Safety": {
+        icon: Shield,
+        sw: {
+            purpose: "Kituo cha usimamizi wa Afya, Usalama na Mazingira (HSSE). Inarekodi ajali na kuzuia hatari mgodini.",
+            efficiency: "Inapunguza upotevu wa muda kutokana na majeraha (LTI) na kuimarisha utamaduni wa usalama mahali pa kazi.",
+            pro_tips: ["Tumia mbinu ya '5-Why' kuchambua chanzo cha ajali yoyote iliyotokea.", "Fanya ukaguzi (Audit) wa vifaa vya kinga (PPE) kila mwanzo wa shifti."]
+        },
+        en: {
+            purpose: "Health, Safety, Security, and Environment (HSSE) command center for incident reporting and risk mitigation.",
+            efficiency: "Minimizes Lost Time Injuries (LTI) and fosters a pro-active zero-harm safety culture within the workforce.",
+            pro_tips: ["Utilize the '5-Why' methodology for comprehensive root cause analysis of all safety incidents.", "Execute daily PPE compliance audits to ensure field personnel meet industrial safety standards."]
+        }
+    },
+    "Super Admin": {
+        icon: Crown,
+        sw: {
+            purpose: "Huu ndio moyo wa usimamizi wa mfumo mzima. Unatumika kusajili kampuni, kudhibiti watumiaji, na kuwasha/kuzima moduli.",
+            efficiency: "Inatoa mamlaka kamili ya kuona jinsi migodi yote nchini inavyofanya kazi kupitia akaunti moja.",
+            pro_tips: ["Kagua 'Subscription logs' kuhakikisha malipo ya wateja yako sawa.", "Tumia 'System Flags' kuwasha vipengele vipya kwa wateja maalum."]
+        },
+        en: {
+            purpose: "Master governance portal for global entity management, multi-tenant provisioning, and platform-wide configuration.",
+            efficiency: "Provides centralized oversight of national operations, enabling rapid scaling and cross-entity auditing.",
+            pro_tips: ["Audit account provisioning logs to ensure proper entity classification and billing.", "Leverage Dynamic Feature Flags to deploy module-specific updates to strategic clients."]
+        }
+    },
+    "Shimo": {
+        icon: Pickaxe,
+        sw: {
+            purpose: "Daftari la kila siku la uzalishaji wa shimo/duara. Inarekodi idadi ya marumbesa, kina cha shimo, na mche uliopatikana.",
+            efficiency: "Inakusaidia kujua ni duara gani linatoa mzigo mwingi na kupanga nguvu kazi kulingana na uzalishaji.",
+            pro_tips: ["Rekodi mzigo kila mwisho wa shifti ili kuzuia upotevu wa takwimu.", "Linganisha 'Planned length' na urefu halisi uliopigwa."]
+        },
+        en: {
+            purpose: "Daily operational log for small-scale pit production, tracking bucket counts, depth metrics, and ore yield per shaft.",
+            efficiency: "Allows for identification of high-yield shafts and efficient labor allocation based on production velocity.",
+            pro_tips: ["Log load counts immediately at shift-end to prevent data leakage.", "Monitor shaft depth daily to maintain safety standards and production targets."]
+        }
+    },
+    "Mauzo": {
+        icon: DollarSign,
+        sw: {
+            purpose: "Moduli ya kufuatilia mapato yanayotokana na uoshaji na uuzaji wa madini sokoni.",
+            efficiency: "Inakupa picha kamili ya marumbesa mangapi yameoshwa na gramu ngapi zimepatikana dhidi ya bei ya soko.",
+            pro_tips: ["Ingiza bei ya dhahabu ya soko ya siku hiyo ili kupata faida halisi.", "Kagua ripoti ya 'Recovery Rate' kujua kama uoshaji wako una ufanisi."]
+        },
+        en: {
+            purpose: "Revenue tracking module focusing on ore processing (washing) outcomes and final market sales.",
+            efficiency: "Provides a complete reconciliation of processed buckets against final gold recovery and market value.",
+            pro_tips: ["Apply current market spot prices to calculate real-time net profitability.", "Analyze recovery rate trends to optimize processing and identify possible extraction losses."]
+        }
+    },
+    "Vibarua": {
+        icon: Users,
+        sw: {
+            purpose: "Mfumo wa usimamizi wa wafanyakazi na vibarua mgodini. Unasimamia mahudhurio, mishahara, na mikopo.",
+            efficiency: "Inapunguza migogoro ya malipo kwa kuwa na rekodi ya wazi ya siku walizofanya kazi na kazi waliyokamilisha.",
+            pro_tips: ["Weka picha ya kibarua kwa usalama na utambulisho rahisi.", "Tumia ripoti ya malipo (Pay-list) wakati wa kutoa mishahara."]
+        },
+        en: {
+            purpose: "Human Resources ledger for artisanal and small-scale mining labor, tracking attendance, payroll, and advances.",
+            efficiency: "Eliminates payment disputes by maintaining a transparent immutable record of days worked and tasks completed.",
+            pro_tips: ["Maintain a digital registry with photos for enhanced site security and identification.", "Generate the payroll summary weekly to streamline administrative overhead."]
+        }
+    },
+    "Mafuta": {
+        icon: Fuel,
+        sw: {
+            purpose: "Usimamizi wa nishati (Petrol/Diesel). Inarekodi ununuzi wa mafuta na jinsi yanavyotumika kwenye mashine/genereta.",
+            efficiency: "Inazuia wizi na upotevu wa mafuta kwa kulinganisha 'Lita zilizotumika' dhidi ya 'Kazi iliyofanyika'.",
+            pro_tips: ["Rekodi 'Hour meter' ya genereta/mashine kila wakati mafuta yanapoongezwa.", "Kagua kama kuna kuvuja kwa mafuta ikiwa matumizi yanaongezeka bila sababu."]
+        },
+        en: {
+            purpose: "Energy and fuel logistics management, tracking bulk purchases, inventory storage, and consumption per unit.",
+            efficiency: "Prevents fuel shrinkage and identifies mechanical issues by correlating burn rates with machine hour logs.",
+            pro_tips: ["Document machine hour-meters at every refueling event for accurate consumption analytics.", "Audit irregular spikes in fuel usage to identify potential theft or engine maintenance needs."]
         }
     }
 }
@@ -104,8 +234,28 @@ interface ModuleHelpNotebookProps {
 }
 
 export function ModuleHelpNotebook({ moduleTitle }: ModuleHelpNotebookProps) {
-    // Find content or use generic fallback
-    const moduleKey = Object.keys(MODULE_HELP_REGISTRY).find(k => moduleTitle.includes(k)) || "General";
+    // Advanced Matching Logic (Case-insensitive keyword search)
+    const normalizedTitle = moduleTitle.toLowerCase();
+    
+    let moduleKey = "General";
+    
+    if (normalizedTitle.includes("command") || normalizedTitle.includes("super admin")) moduleKey = "Super Admin";
+    else if (normalizedTitle.includes("blasting")) moduleKey = "Blasting";
+    else if (normalizedTitle.includes("drilling") && !normalizedTitle.includes("diamond")) moduleKey = "Drilling";
+    else if (normalizedTitle.includes("diamond") || normalizedTitle.includes("core")) moduleKey = "Diamond Drilling";
+    else if (normalizedTitle.includes("fleet") || normalizedTitle.includes("vehicle")) moduleKey = "Fleet";
+    else if (normalizedTitle.includes("haulage") || normalizedTitle.includes("material")) moduleKey = "Material Handling";
+    else if (normalizedTitle.includes("inventory") || normalizedTitle.includes("ghala") || normalizedTitle.includes("stoo")) moduleKey = "Inventory";
+    else if (normalizedTitle.includes("geophysic") || normalizedTitle.includes("ramani")) moduleKey = "Geophysics";
+    else if (normalizedTitle.includes("assay") || normalizedTitle.includes("maabara")) moduleKey = "Assay";
+    else if (normalizedTitle.includes("finance") || normalizedTitle.includes("billing") || normalizedTitle.includes("malipo") || normalizedTitle.includes("invoice")) moduleKey = "Finance";
+    else if (normalizedTitle.includes("safety") || normalizedTitle.includes("ajali") || normalizedTitle.includes("usalama")) moduleKey = "Safety";
+    else if (normalizedTitle.includes("dashbodi") || (normalizedTitle.includes("dashboard") && normalizedTitle.includes("chimbo"))) moduleKey = "Dashboard";
+    else if (normalizedTitle.includes("shimo")) moduleKey = "Shimo";
+    else if (normalizedTitle.includes("mauzo")) moduleKey = "Mauzo";
+    else if (normalizedTitle.includes("vibarua") || normalizedTitle.includes("personnel")) moduleKey = "Vibarua";
+    else if (normalizedTitle.includes("mafuta") || normalizedTitle.includes("fuel")) moduleKey = "Mafuta";
+    
     const help = MODULE_HELP_REGISTRY[moduleKey] || {
         icon: BookOpen,
         sw: {

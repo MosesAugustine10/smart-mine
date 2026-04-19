@@ -7,6 +7,7 @@ import {
 } from "lucide-react"
 import { PhotoUploadField } from "@/components/photo-upload-field"
 import { pushChimboNotification } from "@/components/chimbo/chimbo-notifications"
+import { ModuleHelpNotebook } from "@/components/module-help-notebook"
 
 function saveToQueue(tableName: string, data: any) {
   const queue = JSON.parse(localStorage.getItem("chimbo_sync_queue") || "[]")
@@ -68,7 +69,8 @@ export default function ShimoLeoPage() {
         <button onClick={() => router.back()} className="h-12 w-12 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 shadow-sm">
           <ChevronLeft className="w-6 h-6" />
         </button>
-        <h1 className="text-lg font-black uppercase text-amber-600">Uzalishaji LEO</h1>
+        <h1 className="text-lg font-black uppercase text-amber-600 flex-1">Uzalishaji LEO</h1>
+        <ModuleHelpNotebook moduleTitle="Shimo" />
       </nav>
 
       <div className="p-4 space-y-6">

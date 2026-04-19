@@ -14,6 +14,7 @@ import { BlastingTable } from "@/components/blasting/blasting-table"
 import { ProfessionalReportButton } from "@/components/ui/professional-report-button"
 import { BlastingBudgetVsActual } from "@/components/blasting/budget-vs-actual-chart"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { ModuleHelpNotebook } from "@/components/module-help-notebook"
 import { SystemPeriodFilter, type ReportPeriod } from "@/components/ui/system-period-filter"
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine
@@ -144,6 +145,7 @@ export default function BlastingPage() {
                     { label: "AVG POWDER FACTOR", value: (totalExplosiveWeight / (totalTonnage || 1)).toFixed(3) + " kg/t" }
                   ]}
               />
+              <ModuleHelpNotebook moduleTitle="Blasting" />
               <Link href="/blasting/new">
                 <Button className="h-12 px-6 rounded-2xl bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-widest shadow-xl transition-all">
                     <Plus className="w-4 h-4 mr-2" /> New Blast

@@ -49,11 +49,8 @@ export async function proxy(request: NextRequest) {
       try {
         const decoded = decodeURIComponent(cachedRole)
         const role = decoded.startsWith('{') ? JSON.parse(decoded).role : decoded
-        if (role?.toUpperCase() === "SUPER_ADMIN") {
-          if (pathname === "/auth/login") {
-            return NextResponse.redirect(new URL("/super-admin", request.url))
-          }
-        }
+        // REMOVED: Auto-redirect of super-admin from /auth/login
+        // This allows the owner to actually see the login page if they want to.
       } catch (e) {}
     }
     return NextResponse.next()
@@ -106,9 +103,9 @@ export async function proxy(request: NextRequest) {
     supabaseResponse.cookies.set("msm_user_role", JSON.stringify(syncData), { maxAge: 60 * 60 * 24, path: "/", sameSite: "lax" })
   }
 
-  // 4. SUPER ADMIN BYPASS - Send to dedicated door if they try to use client routes
+  // 4. SUPER ADMIN BYPASS - Send to dedicated door if they try to access internal admin routes
   if (userRole.toUpperCase() === "SUPER_ADMIN") {
-    if (pathname === "/" || pathname === "/admin" || pathname === "/home" || pathname === "/auth/login") {
+    if (pathname === "/admin" || pathname === "/home") {
       return NextResponse.redirect(new URL("/super-admin", request.url))
     }
     return supabaseResponse

@@ -7,7 +7,6 @@ import {
   MapPin, Activity, AlertTriangle, BatteryCharging, ShieldCheck, Cog
 } from "lucide-react"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
-import { ModuleHelpNotebook } from "@/components/module-help-notebook"
 
 export const dynamic = "force-dynamic"
 

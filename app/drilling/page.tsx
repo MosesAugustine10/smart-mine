@@ -12,6 +12,7 @@ import { DrillingTable } from "@/components/drilling/drilling-table"
 import { ProfessionalReportButton } from "@/components/ui/professional-report-button"
 import { useTranslation } from "@/components/language-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { ModuleHelpNotebook } from "@/components/module-help-notebook"
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format, isWithinInterval } from "date-fns"
 import { SystemPeriodFilter, type ReportPeriod } from "@/components/ui/system-period-filter"
 import { 
@@ -139,6 +140,7 @@ export default function DrillingPage() {
                     { label: "TOTAL FUEL", value: totalFuel.toFixed(1) }
                   ]}
               />
+              <ModuleHelpNotebook moduleTitle="Drilling" />
               <Link href="/drilling/new">
                 <Button className="h-12 px-6 rounded-2xl bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-widest shadow-xl transition-all">
                     <Plus className="w-4 h-4 mr-2" /> Log Drill

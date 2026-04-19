@@ -10,7 +10,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/components/language-context"
-import { ModuleHelpNotebook } from "@/components/module-help-notebook"
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts'
@@ -101,7 +100,6 @@ export default function InventoryHub() {
             title={t('inventory')} 
             description={`Operational supply chain command center | Authenticated as: ${role || 'Guest'}`} 
           />
-          <ModuleHelpNotebook moduleTitle="Inventory" />
         </div>
         <div className="flex gap-3">
             {canEdit && (
