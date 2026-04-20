@@ -23,9 +23,9 @@ export function SafetyScorecard() {
         const { data: incidents } = await supabase.from("safety_incidents").select("*").order("incident_date", { ascending: false })
         if (!incidents) return
 
-        const lti = incidents.filter(i => i.incident_type === 'lost_time_injury' || i.days_lost > 0).length
-        const nearMisses = incidents.filter(i => i.incident_type === 'near_miss').length
-        const openCritical = incidents.filter(i => i.severity === 'CRITICAL' && !i.manager_signature).length
+        const lti = incidents.filter((i: any) => i.incident_type === 'lost_time_injury' || i.days_lost > 0).length
+        const nearMisses = incidents.filter((i: any) => i.incident_type === 'near_miss').length
+        const openCritical = incidents.filter((i: any) => i.severity === 'CRITICAL' && !i.manager_signature).length
         
         let daysSinceLast = metrics.daysSinceLast || 45 // Fallback to 45 as a placeholder
         const lastIncident = incidents[0]

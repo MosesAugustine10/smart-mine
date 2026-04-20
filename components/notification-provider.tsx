@@ -40,7 +40,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public' },
-        (payload) => {
+        (payload: any) => {
           handleNewInsert(payload)
         }
       )

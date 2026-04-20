@@ -78,7 +78,7 @@ export default function SuperAdminDashboard() {
         .select('flag_name, is_enabled')
       
       if (data) {
-        data.forEach(flag => {
+        data.forEach((flag: any) => {
           if (flag.flag_name === 'show_consultant_pricing') setConsultantFlagEnabled(flag.is_enabled)
           if (flag.flag_name === 'enable_selcom') setSelcomFlagEnabled(flag.is_enabled)
           if (flag.flag_name === 'enable_whatsapp_api') setWhatsappFlagEnabled(flag.is_enabled)

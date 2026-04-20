@@ -51,7 +51,7 @@ export function useCompanyBrands() {
 
         setBrands(data || [])
         if (data && data.length > 0) {
-          setSelectedBrand(data.find(b => b.is_default) || data[0])
+          setSelectedBrand(data.find((b: any) => b.is_default) || data[0])
         }
       } catch (err) {
         console.error("Error fetching company brands:", err)

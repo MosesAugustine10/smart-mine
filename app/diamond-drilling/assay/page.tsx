@@ -79,14 +79,14 @@ export default function AdvancedAssayDashboard() {
     const assayedSamples = samples.filter(s => s.result_au !== null && s.result_au !== undefined)
     
     const avgAu = assayedSamples.length > 0 
-        ? (assayedSamples.reduce((sum, s) => sum + Number(s.result_au), 0) / assayedSamples.length).toFixed(2) 
+        ? (assayedSamples.reduce((sum: number, s: any) => sum + Number(s.result_au), 0) / assayedSamples.length).toFixed(2) 
         : "0.00"
 
     const highGradeCount = assayedSamples.filter(s => Number(s.result_au) > 5).length
 
     const completedSamples = samples.filter(s => s.date_completed && s.date_dispatched)
     const avgTat = completedSamples.length > 0
-        ? Math.round(completedSamples.reduce((sum, s) => sum + differenceInDays(new Date(s.date_completed), new Date(s.date_dispatched)), 0) / completedSamples.length)
+        ? Math.round(completedSamples.reduce((sum: number, s: any) => sum + differenceInDays(new Date(s.date_completed), new Date(s.date_dispatched)), 0) / completedSamples.length)
         : 0
 
     const qaqcSamples = samples.filter(s => s.qaqc_pass !== null && s.qaqc_pass !== undefined)
@@ -120,7 +120,7 @@ export default function AdvancedAssayDashboard() {
     }
 
     const alerts: AssayAlert[] = []
-    samples.forEach(s => {
+    samples.forEach((s: any) => {
         if (s.qaqc_pass === 'FAIL') {
             alerts.push({ id: s.id, type: 'qaqc', title: `QA/QC Failure: ${s.sample_id}`, desc: s.comments || 'Variance exceeded limits.' })
         }

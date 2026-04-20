@@ -177,7 +177,7 @@ export default function VibaruaPage() {
             )}
 
             <div className="space-y-3">
-               {filtered.length > 0 ? filtered.map(w => (
+               {filtered.length > 0 ? filtered.map((w: any) => (
                  <div key={w.id} className={`bg-white dark:bg-slate-900 p-5 rounded-[2rem] border-2 transition-all shadow-sm flex items-center justify-between ${w.is_present ? "border-emerald-500/30 shadow-emerald-500/5" : "border-slate-100 dark:border-slate-800/50"}`}>
                     <div className="flex items-center gap-4">
                        <div className="h-16 w-16 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center overflow-hidden shadow-inner shrink-0">
@@ -227,7 +227,7 @@ export default function VibaruaPage() {
 
             <div className="space-y-4">
                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-4">Mialiko Inayotumika</h3>
-               {invites.length > 0 ? invites.filter(i => !i.used && new Date(i.expires_at) > new Date()).map(i => (
+               {invites.length > 0 ? invites.filter((i: any) => !i.used && new Date(i.expires_at) > new Date()).map((i: any) => (
                  <div key={i.code} className="bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 p-6 rounded-[2.2rem] flex items-center justify-between shadow-sm">
                     <div className="flex items-center gap-4">
                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center">

@@ -62,7 +62,7 @@ export function InvoiceGenerator({ projects }: { projects: any[] }) {
   const [items, setItems] = useState<BillableItem[]>([])
 
   // Financial Calculations
-  const subtotal = items.reduce((sum, item) => sum + item.amount, 0)
+  const subtotal = items.reduce((sum: number, item: BillableItem) => sum + item.amount, 0)
   const taxAmount = (subtotal * formData.tax_rate) / 100
   const totalAmount = subtotal + taxAmount
 
@@ -71,7 +71,7 @@ export function InvoiceGenerator({ projects }: { projects: any[] }) {
   }
 
   const removeItem = (index: number) => {
-    setItems(items.filter((_, i) => i !== index))
+    setItems(items.filter((_, i: number) => i !== index))
   }
 
   const updateItem = (index: number, field: keyof BillableItem, value: any) => {
@@ -100,7 +100,7 @@ export function InvoiceGenerator({ projects }: { projects: any[] }) {
         .select("*")
         .eq("status", "COMPLETED")
       
-      blasts?.forEach(b => {
+      blasts?.forEach((b: any) => {
          const totalBlastCost = (b.total_explosive_cost || 0) + (b.initiation_cost || 0) + (b.labor_cost || 0) + (b.accessories_cost || 0)
          if (totalBlastCost > 0) {
             newItems.push({
@@ -120,7 +120,7 @@ export function InvoiceGenerator({ projects }: { projects: any[] }) {
         .select("*")
         .eq("project_id", formData.project_id)
       
-      drills?.forEach(d => {
+      drills?.forEach((d: any) => {
          const drillCost = (d.hole_length || 0) * (d.drilling_cost_per_m || 25000) // Default rate if null
          if (drillCost > 0) {
             newItems.push({
@@ -139,7 +139,7 @@ export function InvoiceGenerator({ projects }: { projects: any[] }) {
          .from("equipment_payloads")
          .select("*")
 
-      payloads?.forEach(p => {
+      payloads?.forEach((p: any) => {
          const tonnageRate = 1500 // Demo rate per ton
          const amount = p.total_tonnage * tonnageRate
          newItems.push({
@@ -207,7 +207,7 @@ export function InvoiceGenerator({ projects }: { projects: any[] }) {
       if (invError) throw invError
 
       // 2. Insert Line Items
-      const lineItems = items.map(item => ({
+      const lineItems = items.map((item: BillableItem) => ({
         invoice_id: invoice.id,
         description: item.description,
         quantity: item.quantity,
@@ -273,7 +273,7 @@ export function InvoiceGenerator({ projects }: { projects: any[] }) {
                        <SelectValue placeholder="Select Context" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-2">
-                       {projects.map(p => (
+                       {projects.map((p: any) => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                        ))}
                     </SelectContent>

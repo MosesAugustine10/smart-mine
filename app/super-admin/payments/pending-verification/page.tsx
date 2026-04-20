@@ -111,7 +111,7 @@ export default function PendingVerificationPage() {
                     <CardContent className="p-6">
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Jumla ya Fedha</p>
                         <p className="text-2xl font-black text-slate-900 dark:text-white">
-                            TSh {pendingInvoices.reduce((s, i) => s + (i.amount || 0), 0).toLocaleString()}
+                            TSh {pendingInvoices.reduce((s: number, i: any) => s + (i.amount || 0), 0).toLocaleString()}
                         </p>
                     </CardContent>
                 </Card>

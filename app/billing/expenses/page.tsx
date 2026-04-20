@@ -69,7 +69,7 @@ export default function ExpensesPage() {
         const { data: invData } = await invQuery
 
         setExpenses(expData || [])
-        setTotalRevenue(invData?.reduce((s, i) => s + (i.grand_total || 0), 0) || 0)
+        setTotalRevenue(invData?.reduce((s: number, i: any) => s + (i.grand_total || 0), 0) || 0)
         setLoading(false)
     }
 

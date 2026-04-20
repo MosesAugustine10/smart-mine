@@ -48,15 +48,15 @@ export default function FinancialLedgerPage() {
             if (cid) expQuery = expQuery.eq("company_id", cid)
             const { data: expData } = await expQuery
 
-            const revenue = invData?.reduce((s, i) => s + (i.grand_total || 0), 0) || 0
-            const costs = expData?.reduce((s, e) => s + (e.amount || 0), 0) || 0
+            const revenue = invData?.reduce((s: number, i: any) => s + (i.grand_total || 0), 0) || 0
+            const costs = expData?.reduce((s: number, e: any) => s + (e.amount || 0), 0) || 0
             const profit = revenue - costs
 
             setStats({ revenue, costs, profit })
 
             // Merge for unified ledger
             const unified = [
-                ...(invData || []).map(i => ({
+                ...(invData || []).map((i: any) => ({
                     date: i.issue_date || i.created_at,
                     type: "INCOME",
                     category: "Billing",
@@ -64,7 +64,7 @@ export default function FinancialLedgerPage() {
                     amount: i.grand_total,
                     status: i.status
                 })),
-                ...(expData || []).map(e => ({
+                ...(expData || []).map((e: any) => ({
                     date: e.log_date,
                     type: "EXPENSE",
                     category: e.category,
@@ -100,8 +100,8 @@ export default function FinancialLedgerPage() {
             })
         }
 
-        const revenue = filtered.filter(t => t.type === "INCOME").reduce((s, i) => s + (i.amount || 0), 0)
-        const costs = filtered.filter(t => t.type === "EXPENSE").reduce((s, e) => s + (e.amount || 0), 0)
+        const revenue = filtered.filter(t => t.type === "INCOME").reduce((s: number, i: any) => s + (i.amount || 0), 0)
+        const costs = filtered.filter(t => t.type === "EXPENSE").reduce((s: number, e: any) => s + (e.amount || 0), 0)
         const profit = revenue - costs
 
         setStats({ revenue, costs, profit })

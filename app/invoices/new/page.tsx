@@ -48,7 +48,7 @@ export default function NewInvoiceGeneratorPage() {
         const allOps: any[] = []
         
         if (blasting.data) {
-            blasting.data.forEach(op => allOps.push({
+            blasting.data.forEach((op: any) => allOps.push({
                 id: op.id,
                 module: "BLASTING",
                 reference: op.blaster_name,
@@ -61,7 +61,7 @@ export default function NewInvoiceGeneratorPage() {
         }
 
         if (drilling.data) {
-            drilling.data.forEach(op => allOps.push({
+            drilling.data.forEach((op: any) => allOps.push({
                 id: op.id,
                 module: "DRILLING",
                 reference: op.drill_number,
@@ -74,7 +74,7 @@ export default function NewInvoiceGeneratorPage() {
         }
 
         if (diamond.data) {
-            diamond.data.forEach(op => allOps.push({
+            diamond.data.forEach((op: any) => allOps.push({
                 id: op.id,
                 module: "DIAMOND",
                 reference: op.drill_rig_number,
@@ -87,7 +87,7 @@ export default function NewInvoiceGeneratorPage() {
         }
 
         if (material.data) {
-            material.data.forEach(op => allOps.push({
+            material.data.forEach((op: any) => allOps.push({
                 id: op.id,
                 module: "MATERIAL",
                 reference: op.equipment_id,
@@ -100,7 +100,7 @@ export default function NewInvoiceGeneratorPage() {
         }
 
         if (geophysics.data) {
-            geophysics.data.forEach(op => allOps.push({
+            geophysics.data.forEach((op: any) => allOps.push({
                 id: op.id,
                 module: "GEOPHYSICS",
                 reference: op.survey_id,
@@ -273,7 +273,7 @@ export default function NewInvoiceGeneratorPage() {
                             </div>
                             <div className="flex justify-between items-center text-lg font-black uppercase text-slate-900">
                                 <span>Sub-Quantum</span>
-                                <span>TZS {selectedBillingItems.reduce((s, i) => s + i.total_cost, 0).toLocaleString()}</span>
+                                <span>TZS {selectedBillingItems.reduce((s: number, i: any) => s + i.total_cost, 0).toLocaleString()}</span>
                             </div>
                         </div>
                         <Button 

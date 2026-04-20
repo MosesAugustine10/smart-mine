@@ -115,7 +115,7 @@ export default async function QuarryControlHub() {
             <CardContent className="p-0">
                <table className="w-full">
                   <tbody className="divide-y divide-slate-50">
-                     {inspections?.map(i => (
+                     {inspections?.map((i: any) => (
                         <tr key={i.id} className="group hover:bg-slate-50 transition-all">
                            <td className="p-8">
                               <div className="flex items-center gap-6">
@@ -162,7 +162,7 @@ export default async function QuarryControlHub() {
             <CardContent className="p-0">
                <table className="w-full">
                   <tbody className="divide-y divide-slate-50">
-                     {payloads?.map(p => (
+                     {payloads?.map((p: any) => (
                         <tr key={p.id} className="group hover:bg-slate-50 transition-all">
                            <td className="p-8">
                               <div className="flex items-center gap-6">

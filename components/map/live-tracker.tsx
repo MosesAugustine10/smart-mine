@@ -236,10 +236,10 @@ export function LiveTracker() {
     
     channel.on("postgres_changes", {
         event: "*", schema: "public", table: "vehicle_locations",
-      }, (payload) => {
+      }, (payload: any) => {
         const d = payload.new as any
         setRealtime(true)
-        setVehicles(prev => prev.map(v =>
+        setVehicles(prev => prev.map((v: Vehicle) =>
           v.plate === d.vehicle_plate
             ? { ...v, lat: d.latitude, lng: d.longitude, speed_kmh: (d.speed_mps ?? 0) * 3.6,
                 last_ping: d.recorded_at || new Date().toISOString(), history: [...v.history.slice(-60), [d.latitude, d.longitude]] }
@@ -249,14 +249,14 @@ export function LiveTracker() {
 
     channel.on("postgres_changes", {
         event: "*", schema: "public", table: "hardware_locations",
-      }, async (payload) => {
+      }, async (payload: any) => {
         const d = payload.new as any
         setRealtime(true)
         
         // Find vehicle by tracker ID
         const { data: vInfo } = await supabase.from('vehicles').select('vehicle_number').eq('tracker_device_id', d.tracker_device_id).maybeSingle()
         if (vInfo) {
-            setVehicles(prev => prev.map(v =>
+            setVehicles(prev => prev.map((v: Vehicle) =>
               v.plate === vInfo.vehicle_number
                 ? { ...v, lat: d.latitude, lng: d.longitude, speed_kmh: (d.speed ?? 0), 
                     // Update fuel level if available from hardware
@@ -383,9 +383,9 @@ export function LiveTracker() {
   }
 
   // ── KPI summary ──────────────────────────────────────────────────────────
-  const activeCount  = vehicles.filter(v => v.status === "moving").length
-  const alertCount   = vehicles.reduce((s, v) => s + v.alerts.length, 0) + mainAlerts.filter(a => a.severity === "critical").length
-  const avgSpeed     = vehicles.filter(v => v.speed_kmh > 0).reduce((s, v, _, a) => s + v.speed_kmh / a.length, 0)
+  const activeCount  = vehicles.filter((v: Vehicle) => v.status === "moving").length
+  const alertCount   = vehicles.reduce((s: number, v: Vehicle) => s + v.alerts.length, 0) + mainAlerts.filter((a: MaintenanceAlert) => a.severity === "critical").length
+  const avgSpeed     = vehicles.filter((v: Vehicle) => v.speed_kmh > 0).reduce((s: number, v: Vehicle, _: number, a: Vehicle[]) => s + v.speed_kmh / a.length, 0)
   const selectedVeh  = vehicles.find(v => v.id === selected)
   const heatPoints   = heatType === "grade" ? GRADE_HEAT_POINTS : SAFETY_HEAT_POINTS
 
