@@ -168,23 +168,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user) {
           setUser(session.user)
           
-          // Check the raw cookie. If we already established SUPER_ADMIN via gate, NEVER overwrite it.
-          const localCookie = typeof document !== 'undefined' ? document.cookie : ''
-          const isSuperAdminCookie = localCookie.includes('SUPER_ADMIN')
-          
           // Only fetch if profile is missing - prevents refresh loops
-          if (!profile && !isSuperAdminCookie) {
-              const { data: profileData } = await supabase
-                .from('user_profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .maybeSingle()
+          if (!profile) {
+              const localCookie = typeof document !== 'undefined' ? document.cookie : ''
+              const isSuperAdmin = localCookie.includes('SUPER_ADMIN')
               
-              if (profileData) {
-                setProfile({
-                  ...profileData,
-                  enabled_modules: (profileData as any).companies?.enabled_modules || []
-                } as UserProfile)
+              if (isSuperAdmin) {
+                  // Reconstruct profile from cookie for SuperAdmin to avoid kick-back redirect
+                  setProfile({
+                      id: session.user.id,
+                      email: session.user.email || "",
+                      role: 'SUPER_ADMIN',
+                      position: 'SYSTEM_OWNER'
+                  } as UserProfile)
+              } else {
+                  const { data: profileData } = await supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .maybeSingle()
+                  
+                  if (profileData) {
+                    setProfile({
+                      ...profileData,
+                      enabled_modules: (profileData as any).companies?.enabled_modules || []
+                    } as UserProfile)
+                  }
               }
           }
         } else {
@@ -276,7 +285,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const path = (pathname?.split('/')[1]) || 'home'
 
-    if (profile?.role?.toUpperCase() === 'SUPER_ADMIN' && path !== 'super-admin') {
+    if (profile?.role?.toUpperCase() === 'SUPER_ADMIN' && path !== 'super-admin' && !isAuthRoute && !isPublic) {
       router.replace('/super-admin')
       return
     }
