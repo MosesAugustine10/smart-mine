@@ -7,23 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/components/ui/use-toast"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
     Building2, Save, Send, CheckCircle2, Loader2,
     AlertTriangle, ArrowLeft, Calendar, DollarSign,
-    Pickaxe, Zap, Diamond, Layers, Activity, Truck, Package, Wallet, ShieldAlert
+    Pickaxe, Zap, Diamond, Layers, Activity, Truck, Package, Wallet, ShieldAlert,
+    ChevronDown, ChevronRight
 } from "lucide-react"
 
-const ALL_MODULES = [
-    { id: "blasting",          label: "Blasting",          icon: Zap,         color: "text-orange-500" },
-    { id: "drilling",          label: "Drilling",          icon: Pickaxe,      color: "text-blue-500" },
-    { id: "diamond-drilling",  label: "Diamond Drilling",  icon: Diamond,      color: "text-violet-500" },
-    { id: "material-handling", label: "Material Handling", icon: Layers,       color: "text-amber-500" },
-    { id: "geophysics",        label: "Geophysics / Assay",icon: Activity,     color: "text-teal-500" },
-    { id: "fleet",             label: "Fleet Management",  icon: Truck,        color: "text-sky-500" },
-    { id: "inventory",         label: "Inventory Hub",     icon: Package,      color: "text-lime-600" },
-    { id: "finance",           label: "Finance & Invoices",icon: Wallet,       color: "text-emerald-500" },
-    { id: "safety",            label: "Safety Center",     icon: ShieldAlert,  color: "text-red-500" },
-]
+
 
 export default function SubscriptionManagementPage() {
     const params = useParams()
@@ -40,32 +32,64 @@ export default function SubscriptionManagementPage() {
     // Form state
     const [billingCycle, setBillingCycle] = useState("monthly")
     const [amount, setAmount] = useState("")
-    const [selectedModules, setSelectedModules] = useState<string[]>(ALL_MODULES.map(m => m.id))
+    const [selectedModules, setSelectedModules] = useState<any>({}) // Now an object
+    const [inventoryOpen, setInventoryOpen] = useState(true)
 
     useEffect(() => {
         async function loadData() {
             const supabase = getSupabaseBrowserClient()
             const [{ data: co }, { data: sub }] = await Promise.all([
                 supabase.from("companies").select("*").eq("id", companyId).single(),
-                supabase.from("company_subscriptions").select("*").eq("company_id", companyId).single()
+                supabase.from("company_subscriptions").select("*").eq("company_id", companyId).maybeSingle()
             ])
             setCompany(co)
+            
             if (sub) {
                 setSubscription(sub)
                 setBillingCycle(sub.billing_cycle || "monthly")
                 setAmount(sub.amount?.toString() || "")
-                setSelectedModules(sub.enabled_modules || ALL_MODULES.map(m => m.id))
+                
+                // Handle both legacy string[] and new object structures
+                const modules = sub.enabled_modules || []
+                if (Array.isArray(modules)) {
+                    const modObj: any = {}
+                    modules.forEach((m: string) => {
+                        if (m === 'inventory') {
+                            modObj['inventory'] = {
+                                blasting: true,
+                                drilling: true,
+                                diamond_drilling: true,
+                                spare_parts: true
+                            }
+                        } else {
+                            modObj[m] = true
+                        }
+                    })
+                    setSelectedModules(modObj)
+                } else {
+                    setSelectedModules(modules)
+                }
+            } else {
+                // Default modules for new subscription (Enabling all by default since UI is removed)
+                const defaults: any = {
+                    blasting: true,
+                    drilling: true,
+                    'diamond-drilling': true,
+                    'material-handling': true,
+                    geophysics: true,
+                    fleet: true,
+                    inventory: { blasting: true, drilling: true, diamond_drilling: true, spare_parts: true },
+                    finance: true,
+                    safety: true
+                }
+                setSelectedModules(defaults)
             }
             setLoading(false)
         }
         loadData()
     }, [companyId])
 
-    const toggleModule = (id: string) => {
-        setSelectedModules(prev =>
-            prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
-        )
-    }
+
 
     const handleSave = async () => {
         setSaving(true)
@@ -82,7 +106,7 @@ export default function SubscriptionManagementPage() {
                 subscription_type: company?.category === "SMALL_SCALE" ? "small_scale" : "medium_scale",
                 billing_cycle: billingCycle,
                 amount: parseFloat(amount) || 0,
-                enabled_modules: selectedModules,
+                enabled_modules: selectedModules, // Saving as JSONB object
                 start_date: now.toISOString().split("T")[0],
                 next_billing_date: nextBilling.toISOString().split("T")[0],
                 status: parseFloat(amount) === 0 ? "trial" : "active",
@@ -118,7 +142,7 @@ export default function SubscriptionManagementPage() {
                     company_id: companyId,
                     subscription_id: subscription.id,
                     amount: parseFloat(amount),
-                    description: `Smart Mine – ${company?.name} (${billingCycle === "monthly" ? "Mwezi" : billingCycle === "quarterly" ? "Miezi 3" : "Mwaka"})`,
+                    description: `SMART MINE – ${company?.name} (${billingCycle === "monthly" ? "Mwezi" : billingCycle === "quarterly" ? "Miezi 3" : "Mwaka"})`,
                     billing_cycle: billingCycle
                 })
             })
@@ -129,7 +153,7 @@ export default function SubscriptionManagementPage() {
                 description: `Invoice Namba: ${result.invoice_number}. Link ya malipo imetengenezwa.`
             })
             if (result.payment_link) {
-                window.open(`https://wa.me/${company?.phone?.replace(/\D/g, "")}?text=Habari ${company?.name}! Hii ni invoice yako ya Smart Mine: ${result.payment_link}`, "_blank")
+                window.open(`https://wa.me/${company?.phone?.replace(/\D/g, "")}?text=Habari ${company?.name}! Hii ni invoice yako ya SMART MINE: ${result.payment_link}`, "_blank")
             }
         } catch (err: any) {
             toast({ title: "Invoice Imeshindwa", description: err.message, variant: "destructive" })
@@ -169,15 +193,15 @@ export default function SubscriptionManagementPage() {
                 </Button>
             </div>
 
-            <div className="flex items-start gap-6">
-                <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border-2 border-amber-500/20 flex items-center justify-center">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 text-center md:text-left">
+                <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border-2 border-amber-500/20 flex items-center justify-center shrink-0">
                     <Building2 className="w-8 h-8 text-amber-500" />
                 </div>
-                <div>
-                    <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">{company?.name}</h1>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{company?.category?.replace("_", " ")} · Subscription Management</p>
+                <div className="flex flex-col items-center md:items-start">
+                    <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">SMART MINE</h1>
+                    <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{company?.name} · {company?.category?.replace("_", " ")}</p>
                     {subscription?.status && (
-                        <Badge className={`mt-2 border font-black text-[9px] uppercase tracking-widest ${statusColors[subscription.status] || ""}`}>
+                        <Badge className={`mt-2 border font-black text-[8px] md:text-[9px] uppercase tracking-widest ${statusColors[subscription.status] || ""}`}>
                             {subscription.status === "trial" ? "⏳ MAJARIBIO" : subscription.status === "active" ? "✅ AKTIVE" : subscription.status === "past_due" ? "⚠️ DENI LIPO" : "❌ IMEFUTWA"}
                         </Badge>
                     )}
@@ -221,17 +245,17 @@ export default function SubscriptionManagementPage() {
                         </div>
 
                         {subscription && (
-                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 space-y-2">
-                                <div className="flex justify-between text-[10px] font-black uppercase text-slate-500">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 md:p-6 space-y-3">
+                                <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4 text-[10px] font-black uppercase text-slate-500">
                                     <span>Ilianza</span>
                                     <span>{subscription.start_date}</span>
                                 </div>
-                                <div className="flex justify-between text-[10px] font-black uppercase text-slate-500">
+                                <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4 text-[10px] font-black uppercase text-slate-500">
                                     <span>Billing Ijayo</span>
                                     <span>{subscription.next_billing_date}</span>
                                 </div>
                                 {subscription.trial_ends_at && (
-                                    <div className="flex justify-between text-[10px] font-black uppercase text-amber-600">
+                                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-4 text-[10px] font-black uppercase text-amber-600">
                                         <span>Majaribio Yanamalizika</span>
                                         <span>{new Date(subscription.trial_ends_at).toLocaleDateString()}</span>
                                     </div>
@@ -241,45 +265,7 @@ export default function SubscriptionManagementPage() {
                     </CardContent>
                 </Card>
 
-                {/* Module Selection */}
-                <Card className="border-0 shadow-xl rounded-[2.5rem] overflow-hidden">
-                    <CardHeader className="bg-slate-900 text-white p-8">
-                        <CardTitle className="flex items-center justify-between text-sm font-black uppercase tracking-widest">
-                            <span>Modules za Mteja</span>
-                            <span className="text-amber-400 text-xs">{selectedModules.length}/{ALL_MODULES.length} imechaguliwa</span>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                        <div className="grid grid-cols-1 gap-2">
-                            {ALL_MODULES.map(mod => {
-                                const active = selectedModules.includes(mod.id)
-                                return (
-                                    <button
-                                        key={mod.id}
-                                        onClick={() => toggleModule(mod.id)}
-                                        className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-left group ${active ? "bg-amber-500/10 border-amber-500/40" : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-slate-200"}`}
-                                    >
-                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${active ? "bg-amber-500/20" : "bg-slate-100 dark:bg-slate-800"}`}>
-                                            <mod.icon className={`w-4 h-4 ${active ? "text-amber-600" : mod.color}`} />
-                                        </div>
-                                        <span className={`text-xs font-black uppercase tracking-widest flex-1 ${active ? "text-amber-700 dark:text-amber-400" : "text-slate-600 dark:text-slate-400"}`}>
-                                            {mod.label}
-                                        </span>
-                                        {active && <CheckCircle2 className="w-4 h-4 text-amber-500" />}
-                                    </button>
-                                )
-                            })}
-                        </div>
-                        <div className="mt-4 flex gap-2">
-                            <Button variant="ghost" onClick={() => setSelectedModules(ALL_MODULES.map(m => m.id))} className="flex-1 h-10 rounded-xl text-[9px] font-black uppercase border-2">
-                                Chagua Zote
-                            </Button>
-                            <Button variant="ghost" onClick={() => setSelectedModules([])} className="flex-1 h-10 rounded-xl text-[9px] font-black uppercase border-2 text-red-500 hover:text-red-600">
-                                Futa Zote
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+
             </div>
 
             {/* Action Buttons */}
@@ -287,15 +273,15 @@ export default function SubscriptionManagementPage() {
                 <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className="h-16 rounded-2xl bg-slate-900 hover:bg-black text-white font-black uppercase text-[11px] tracking-widest shadow-xl"
+                    className="h-16 md:h-20 rounded-2xl bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] md:text-[11px] tracking-widest shadow-xl"
                 >
-                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Save className="w-4 h-4 mr-2" />Hifadhi Mipangilio</>}
+                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Save className="w-4 h-4 mr-2" />Hifadhi</>}
                 </Button>
 
                 <Button
                     onClick={handleSendInvoice}
                     disabled={sendingInvoice}
-                    className="h-16 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black uppercase text-[11px] tracking-widest shadow-xl shadow-amber-500/20"
+                    className="h-16 md:h-20 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black uppercase text-[10px] md:text-[11px] tracking-widest shadow-xl shadow-amber-500/20"
                 >
                     {sendingInvoice ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4 mr-2" />Tuma Invoice</>}
                 </Button>
@@ -303,10 +289,10 @@ export default function SubscriptionManagementPage() {
                 <Button
                     onClick={handleManualVerify}
                     variant="outline"
-                    className="h-16 rounded-2xl border-2 border-emerald-500/50 text-emerald-700 hover:bg-emerald-50 font-black uppercase text-[11px] tracking-widest"
+                    className="h-16 md:h-20 rounded-2xl border-2 border-emerald-500/50 text-emerald-700 hover:bg-emerald-50 font-black uppercase text-[10px] md:text-[11px] tracking-widest px-4 leading-tight"
                 >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Thibitisha Malipo kwa Mkono
+                    <CheckCircle2 className="w-4 h-4 mr-2 shrink-0" />
+                    Thibitisha Malipo
                 </Button>
             </div>
 

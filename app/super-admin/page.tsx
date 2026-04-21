@@ -117,52 +117,7 @@ export default function SuperAdminDashboard() {
   }
 
 
-  const ALL_MODULES = [
-    { id: "blasting", label: "Blasting Operations", icon: Zap },
-    { id: "drilling", label: "Drilling Operations", icon: Pickaxe },
-    { id: "diamond-drilling", label: "Diamond Drilling", icon: Diamond },
-    { id: "material-handling", label: "Material Handling", icon: Layers },
-    { id: "fleet", label: "Fleet & GPS Tracking", icon: Truck },
-    { id: "inventory", label: "Inventory & Spare Parts", icon: Package },
-    { id: "geophysics", label: "Geophysics Surveys", icon: Activity },
-    { id: "safety", label: "Safety & Incidents", icon: ShieldAlert },
-  ]
 
-  const handleOpenModules = (company: any) => {
-    vibe()
-    setSelectedCompany(company)
-    // In a real app, fetch from DB. For now, use demo state.
-    setActiveModules(company.enabled_modules || ["blasting", "drilling", "fleet", "inventory", "safety", "material-handling"])
-    setModulesModalOpen(true)
-  }
-
-  const handleToggleModule = (modId: string) => {
-    vibe()
-    setActiveModules(prev => 
-      prev.includes(modId) ? prev.filter(id => id !== modId) : [...prev, modId]
-    )
-  }
-
-  const handleSaveModules = async () => {
-    setIsSaving(true)
-    vibe()
-    const supabase = getSupabaseBrowserClient()
-    
-    // 1. Update DB (if company has real ID)
-    if (selectedCompany.id) {
-        await supabase.from("companies").update({ enabled_modules: activeModules }).eq("id", selectedCompany.id)
-    }
-
-    // 2. Update local state
-    setCompanies(prev => prev.map(c => c.name === selectedCompany.name ? { ...c, enabled_modules: activeModules } : c))
-    
-    setIsSaving(false)
-    setModulesModalOpen(false)
-    toast({
-      title: "Subscription Updated",
-      description: `Modules for ${selectedCompany.name} have been synchronized.`
-    })
-  }
 
   const handleCreateOrg = async () => {
       if (!newOrg.name ) return
@@ -250,38 +205,38 @@ export default function SuperAdminDashboard() {
       />
 
       {/* TIERED PERFORMANCE OVERVIEW */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-2">
-        {/* Tier: Enterprise */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-2">
+        {/* Total Consolidation */}
         <Card className="bg-slate-900 border-slate-800 text-white shadow-xl rounded-[2rem] relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Building2 className="w-16 h-16" />
+            <Coins className="w-16 h-16" />
           </div>
           <CardHeader className="pb-1">
-            <CardTitle className="text-[9px] font-black tracking-[0.2em] uppercase text-blue-400">Enterprise Revenue</CardTitle>
+            <CardTitle className="text-[9px] font-black tracking-[0.2em] uppercase text-amber-400">Total System Revenue</CardTitle>
           </CardHeader>
           <CardContent>
              <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-black tracking-tighter text-white font-mono">TZS 0</span>
                 <span className="text-[10px] font-bold text-slate-500 uppercase">/m</span>
              </div>
-             <p className="text-[9px] font-black text-emerald-400 uppercase mt-2">↑ 14% growth</p>
+             <p className="text-[9px] font-black text-emerald-400 uppercase mt-2">↑ 0% from last month</p>
           </CardContent>
         </Card>
 
-        {/* Tier: Small Scale */}
-        <Card className="bg-amber-500 border-amber-600 text-slate-950 shadow-xl rounded-[2rem] relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <HardHat className="w-16 h-16" />
+        {/* Active Companies / Subs */}
+        <Card className="bg-white border-slate-100 text-slate-900 shadow-xl rounded-[2rem] relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-blue-500">
+            <Building2 className="w-16 h-16" />
           </div>
           <CardHeader className="pb-1">
-            <CardTitle className="text-[9px] font-black tracking-[0.2em] uppercase text-slate-900/60">Small Scale MRR</CardTitle>
+            <CardTitle className="text-[9px] font-black tracking-[0.2em] uppercase text-blue-600">Active Companies</CardTitle>
           </CardHeader>
           <CardContent>
              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-black tracking-tighter text-slate-950 font-mono">TSh 0</span>
-                <span className="text-[10px] font-bold text-slate-900/40 uppercase">/m</span>
+                <span className="text-3xl font-black tracking-tighter text-slate-900 font-mono">{companies.length}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Registered</span>
              </div>
-             <p className="text-[9px] font-black text-slate-900/70 uppercase mt-2">↑ 1,245 Active Miners</p>
+             <p className="text-[9px] font-black text-blue-500 uppercase mt-2">{companies.filter(c => c.status === 'Active').length} Active Subscriptions</p>
           </CardContent>
         </Card>
 
@@ -385,8 +340,8 @@ export default function SuperAdminDashboard() {
           <CardContent className="p-0">
              <div className="divide-y divide-slate-100">
                    {companies.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())).map((company, idx) => (
-                      <div key={idx} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                          <div className="flex items-center gap-4">
+                      <div key={idx} className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between hover:bg-slate-50 transition-colors gap-4">
+                          <div className="flex items-center gap-3 md:gap-4">
                               <div className={`w-12 h-12 rounded-xl flex items-center justify-center border-2 ${
                                 company.category === 'SMALL_SCALE' ? 'bg-amber-500 border-amber-600' :
                                 company.category === 'MEDIUM_SCALE' ? 'bg-blue-600 border-blue-700' :
@@ -411,31 +366,22 @@ export default function SuperAdminDashboard() {
                               </div>
                           </div>
                           
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                                 <Button 
                                     variant="ghost" 
                                     size="sm"
                                     onClick={() => handleLaunchDashboard(company)}
-                                    className="h-10 px-4 rounded-xl hover:bg-slate-900 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest flex items-center gap-2 border border-slate-100 shadow-sm"
+                                    className="flex-1 md:flex-none h-10 px-4 rounded-xl hover:bg-slate-900 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 border border-slate-100 shadow-sm whitespace-nowrap"
                                 >
                                     <LayoutDashboard className="w-3.5 h-3.5 text-blue-500" />
-                                    Launch Controller
+                                    Launch
                                 </Button>
-                                <a href={`/super-admin/companies/${company.id}/subscription`} target="_blank" rel="noreferrer">
+                                <a href={`/super-admin/companies/${company.id}/subscription`} className="flex-1 md:flex-none">
                                     <Button variant="ghost" size="sm"
-                                        className="h-10 px-3 rounded-xl hover:bg-amber-100 hover:text-amber-700 font-black text-[9px] uppercase tracking-widest flex items-center gap-1.5 border border-amber-100 shadow-sm">
-                                        <Coins className="w-3.5 h-3.5 text-amber-500" />Bei / Subscription
+                                        className="w-full h-10 px-3 rounded-xl hover:bg-amber-100 hover:text-amber-700 font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 border border-amber-100 shadow-sm whitespace-nowrap">
+                                        <Coins className="w-3.5 h-3.5 text-amber-500" />Subscription
                                     </Button>
                                 </a>
-                                
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={() => handleOpenModules(company)}
-                                    className="h-10 w-10 rounded-xl hover:bg-blue-100 hover:text-blue-600 transition-all border border-slate-100"
-                                >
-                                    <Settings className="w-4 h-4" />
-                                </Button>
                           </div>
                       </div>
                   ))}
@@ -445,76 +391,7 @@ export default function SuperAdminDashboard() {
         </Card>
         </div>
 
-        {/* ── MODULES MANAGEMENT MODAL ── */}
-        {modulesModalOpen && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-                <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setModulesModalOpen(false)} />
-                <Card className="relative w-full max-w-2xl border-4 border-slate-200 dark:border-white/5 rounded-[4rem] shadow-2xl overflow-hidden bg-white dark:bg-slate-900 animate-in zoom-in-95 duration-300">
-                    <CardHeader className="p-10 pb-0">
-                        <div className="flex items-center gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl">
-                                <ShieldCheck className="w-7 h-7" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-3xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">Active Subscriptions</CardTitle>
-                                <CardDescription className="text-xs font-bold uppercase tracking-widest text-blue-500">{selectedCompany?.name} :: Feature Matrix</CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
 
-                    <CardContent className="p-10 space-y-8">
-                        <p className="text-sm font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-                            Select the operational modules authorized for this tenant. Access will be strictly enforced across all personnel in real-time.
-                        </p>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                            {ALL_MODULES.map(mod => (
-                                <button
-                                    key={mod.id}
-                                    onClick={() => handleToggleModule(mod.id)}
-                                    className={cn(
-                                        "flex items-center gap-4 p-5 rounded-3xl border-2 transition-all text-left group",
-                                        activeModules.includes(mod.id)
-                                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/10 shadow-lg"
-                                            : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950/50 opacity-60 grayscale"
-                                    )}
-                                >
-                                    <div className={cn(
-                                        "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
-                                        activeModules.includes(mod.id) ? "bg-blue-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
-                                    )}>
-                                        <mod.icon className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">{mod.label}</p>
-                                        <p className="text-[8px] font-bold text-slate-400 group-hover:text-blue-500 transition-colors uppercase">
-                                            {activeModules.includes(mod.id) ? "Live Access" : "Disabled"}
-                                        </p>
-                                    </div>
-                                    <div className={cn(
-                                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-                                        activeModules.includes(mod.id) ? "border-blue-500 bg-blue-500 text-white" : "border-slate-200 dark:border-slate-800"
-                                    )}>
-                                        {activeModules.includes(mod.id) && <Plus className="w-3 h-3 rotate-45" />}
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="flex gap-3 pt-6">
-                            <Button variant="ghost" onClick={() => setModulesModalOpen(false)} className="flex-1 h-16 rounded-2xl font-black uppercase text-[10px] tracking-widest text-slate-400">Abort Changes</Button>
-                            <Button 
-                                onClick={handleSaveModules}
-                                disabled={isSaving}
-                                className="flex-[2] h-16 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-blue-500/20"
-                            >
-                                {isSaving ? "Syncing Logic..." : "Deploy Subscription Matrix"}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        )}
 
         {/* SIDEBAR PANELS */}
         <div className="space-y-6">
@@ -686,39 +563,7 @@ export default function SuperAdminDashboard() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="p-8 pt-0 space-y-4">
-                    {/* Consultant Pricing Card Flag */}
-                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <div className="space-y-0.5">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-700">
-                                Onyesha Kadi ya Mshauri
-                            </p>
-                            <p className="text-[9px] font-bold text-slate-400">
-                                Kwenye Landing Page · Imepangwa: Aprili 2027
-                            </p>
-                        </div>
-                        <button
-                            onClick={async () => {
-                                setFlagLoading(true)
-                                vibe()
-                                try {
-                                    const supabase = getSupabaseBrowserClient()
-                                    const newVal = !consultantFlagEnabled
-                                    await supabase.from('system_flags')
-                                        .upsert({ flag_name: 'show_consultant_pricing', is_enabled: newVal, updated_at: new Date().toISOString() }, { onConflict: 'flag_name' })
-                                    setConsultantFlagEnabled(newVal)
-                                    toast({ title: newVal ? "✅ Imewashwa" : "⛔ Imezimwa", description: `Kadi ya Mshauri ${newVal ? 'inaonekana' : 'haionekani'} kwenye Landing Page.` })
-                                } catch (e: any) {
-                                    toast({ title: "Kosa", description: e.message, variant: "destructive" })
-                                } finally {
-                                    setFlagLoading(false)
-                                }
-                            }}
-                            disabled={flagLoading}
-                            className={`relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none ${consultantFlagEnabled ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' : 'bg-slate-300'}`}
-                        >
-                            <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300 ${consultantFlagEnabled ? 'left-8' : 'left-1'}`} />
-                        </button>
-                    </div>
+                    {/* Removed Consultant pricing toggle from UI */}
 
                     {/* Selcom Payments Flag */}
                     <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">

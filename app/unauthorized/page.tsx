@@ -80,7 +80,7 @@ export default function UnauthorizedPage() {
         </div>
 
         <p className="text-[9px] text-slate-700 font-black uppercase tracking-widest">
-          Smart Mine Pro · RBAC v2.0 · All access attempts are logged.
+          SMART MINE · RBAC v2.0 · All access attempts are logged.
         </p>
       </div>
     </div>

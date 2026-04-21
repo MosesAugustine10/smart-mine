@@ -24,7 +24,7 @@ async function checkSelcomAvailability(): Promise<boolean> {
 }
 
 const BUSINESS_PHONE = "0623 310 006"
-const BUSINESS_NAME = "SMART MINE PRO"
+const BUSINESS_NAME = "SMART MINE"
 
 const PAYMENT_METHODS = [
     { id: "manual_mpesa",  label: "M-Pesa",       color: "border-green-400 bg-green-50 text-green-800",  accent: "bg-green-500" },
@@ -162,7 +162,7 @@ export default function ClientPaymentPage() {
                     <span className="text-lg font-bold text-slate-500">TSh</span>
                 </div>
                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-1">
-                    {invoice.description || "Smart Mine Pro — Subscription"}
+                    {invoice.description || "SMART MINE — Subscription"}
                 </p>
                 <div className="mt-4 flex items-center justify-between text-[9px] font-black uppercase tracking-widest">
                     <span className="text-slate-500">INV: {invoice.invoice_number}</span>
@@ -299,7 +299,7 @@ export default function ClientPaymentPage() {
 
             {/* Footer */}
             <p className="mt-10 text-[9px] font-bold text-slate-600 uppercase tracking-widest text-center">
-                © 2026 Smart Mine Tanzania · Hakuna malipo yasiyoidhinishwa
+                © 2026 SMART MINE Tanzania · Hakuna malipo yasiyoidhinishwa
             </p>
         </div>
     )

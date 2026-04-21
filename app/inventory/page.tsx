@@ -16,6 +16,7 @@ import {
 
 import { usePermissions } from "@/hooks/use-permissions"
 import { ShieldCheck } from "lucide-react"
+import { useAuth } from "@/components/auth-provider"
 
 export default function InventoryHub() {
   const { t } = useTranslation()
@@ -31,7 +32,8 @@ export default function InventoryHub() {
       bg: "bg-orange-50 dark:bg-orange-900/20",
       borderColor: "border-orange-100 dark:border-orange-900/40",
       stats: ["42.5t Stock", "12 Critical Units"],
-      allowedRoles: ["Investor", "Manager", "Blaster", "Stock Keeper", "Supervisor"]
+      allowedRoles: ["Investor", "Manager", "Blaster", "Stock Keeper", "Supervisor"],
+      accessKey: "inventory.blasting"
     },
     {
       title: "Drilling Consumables",
@@ -42,7 +44,8 @@ export default function InventoryHub() {
       bg: "bg-blue-50 dark:bg-blue-900/20",
       borderColor: "border-blue-100 dark:border-blue-900/40",
       stats: ["885 Units", "System Optimal"],
-      allowedRoles: ["Investor", "Manager", "Geologist", "Driller", "Stock Keeper", "Supervisor"]
+      allowedRoles: ["Investor", "Manager", "Geologist", "Driller", "Stock Keeper", "Supervisor"],
+      accessKey: "inventory.drilling"
     },
     {
       title: "Diamond Tooling",
@@ -53,7 +56,8 @@ export default function InventoryHub() {
       bg: "bg-emerald-50 dark:bg-emerald-900/20",
       borderColor: "border-emerald-100 dark:border-emerald-900/40",
       stats: ["Verified Audit", "12 New Receptions"],
-      allowedRoles: ["Investor", "Manager", "Geologist", "Diamond Driller", "Stock Keeper", "Supervisor"]
+      allowedRoles: ["Investor", "Manager", "Geologist", "Diamond Driller", "Stock Keeper", "Supervisor"],
+      accessKey: "inventory.diamond_drilling"
     },
     {
       title: "Fleet Spare Parts",
@@ -64,7 +68,8 @@ export default function InventoryHub() {
       bg: "bg-indigo-50 dark:bg-indigo-900/20",
       borderColor: "border-indigo-100 dark:border-indigo-900/40",
       stats: ["12.4M Valuated", "5 Active Services"],
-      allowedRoles: ["Investor", "Manager", "Stock Keeper", "Supervisor"]
+      allowedRoles: ["Investor", "Manager", "Stock Keeper", "Supervisor"],
+      accessKey: "inventory.spare_parts"
     },
     {
       title: "PPE & General (Nguo za Kinga)",
@@ -75,12 +80,18 @@ export default function InventoryHub() {
       bg: "bg-rose-50 dark:bg-rose-900/20",
       borderColor: "border-rose-100 dark:border-rose-900/40",
       stats: ["Full Stock", "All Sizes"],
-      allowedRoles: ["Investor", "Manager", "Accountant", "Geologist", "Blaster", "Driller", "Diamond Driller", "Stock Keeper", "Supervisor", "Driver/Operator"]
+      allowedRoles: ["Investor", "Manager", "Accountant", "Geologist", "Blaster", "Driller", "Diamond Driller", "Stock Keeper", "Supervisor", "Driver/Operator"],
+      accessKey: "inventory" // PPE always visible if inventory is active
     }
   ]
 
-  // Filter modules based on role
-  const visibleModules = modules.filter(m => !role || m.allowedRoles.includes(role))
+  const { hasAccess } = useAuth()
+  // Filter modules based on role AND subscription access
+  const visibleModules = modules.filter(m => {
+    const roleAllowed = !role || m.allowedRoles.includes(role)
+    const subscriptionAllowed = hasAccess(m.accessKey)
+    return roleAllowed && subscriptionAllowed
+  })
 
   const trendData = [
     { name: 'Mon', blasting: 4000, drilling: 2400, fleet: 2400 },

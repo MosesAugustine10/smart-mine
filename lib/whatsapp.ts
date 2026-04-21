@@ -1,7 +1,7 @@
 /**
  * lib/whatsapp.ts
  * ─────────────────────────────────────────────────────────────────────────────
- * WhatsApp Business API Utility — Smart Mine Pro
+ * WhatsApp Business API Utility — SMART MINE
  *
  * DESIGN: All functions silently skip (no errors thrown) when API keys are
  * missing. The existing wa.me links on the landing page are UNTOUCHED.
@@ -102,7 +102,7 @@ export async function sendInvoiceViaWhatsApp(
 ) {
     const { invoiceNumber, companyName, amount, paymentLink, dueDate } = invoiceDetails
     const message = [
-        `🏔️ *SMART MINE PRO — Invoice Yako*`,
+        `🏔️ *SMART MINE — Invoice Yako*`,
         ``,
         `Habari ${companyName}!`,
         `Invoice yako imetengenezwa na iko tayari kwa malipo.`,
@@ -113,7 +113,7 @@ export async function sendInvoiceViaWhatsApp(
         ``,
         paymentLink
             ? `🔗 *Link ya Malipo:*\n${paymentLink}`
-            : `📱 Tuma pesa kwa namba: 0623 310 006 (SMART MINE PRO)`,
+            : `📱 Tuma pesa kwa namba: 0623 310 006 (SMART MINE)`,
         ``,
         `Kwa msaada: https://wa.me/255623310006`,
     ].filter(Boolean).join("\n")
@@ -133,7 +133,7 @@ export async function sendPaymentConfirmationViaWhatsApp(
 ) {
     const { companyName, invoiceNumber, amount, activatedUntil } = paymentDetails
     const message = [
-        `✅ *SMART MINE PRO — Malipo Yamethibitishwa!*`,
+        `✅ *SMART MINE — Malipo Yamethibitishwa!*`,
         ``,
         `Hongera ${companyName}! Malipo yako yamekubaliwa.`,
         ``,
@@ -141,10 +141,10 @@ export async function sendPaymentConfirmationViaWhatsApp(
         `💰 *Kiasi Kilicholipwa:* TSh ${amount.toLocaleString()}`,
         activatedUntil ? `📅 *Aktive Hadi:* ${activatedUntil}` : "",
         ``,
-        `Mfumo wako wa SMART MINE PRO uko tayari!`,
+        `Mfumo wako wa SMART MINE uko tayari!`,
         `Ingia sasa: https://smartmine.co.tz`,
         ``,
-        `Asante kwa kuamini SMART MINE PRO! 🏔️`,
+        `Asante kwa kuamini SMART MINE! 🏔️`,
     ].filter(Boolean).join("\n")
 
     return sendWhatsAppMessage(phoneNumber, message)
@@ -158,7 +158,7 @@ export async function sendTrialExpiryReminderViaWhatsApp(
 ) {
     const urgency = daysLeft <= 1 ? "🚨 *HARAKA!*" : daysLeft <= 3 ? "⚠️ *Tahadhari!*" : "ℹ️"
     const message = [
-        `${urgency} *SMART MINE PRO — Ukumbusho wa Majaribio*`,
+        `${urgency} *SMART MINE — Ukumbusho wa Majaribio*`,
         ``,
         `Habari ${companyName}!`,
         ``,
@@ -166,10 +166,10 @@ export async function sendTrialExpiryReminderViaWhatsApp(
             ? `⛔ Muda wako wa majaribio umekwisha leo!`
             : `Muda wako wa majaribio ya BURE unakwisha baada ya siku *${daysLeft}*.`,
         ``,
-        `💳 *Endelea kutumia SMART MINE PRO kwa TSh 25,000/mwezi*`,
+        `💳 *Endelea kutumia SMART MINE kwa TSh 25,000/mwezi*`,
         ``,
         `Lipa sasa kupitia M-Pesa, Tigo Pesa au Airtel Money:`,
-        `📱 *0623 310 006* (SMART MINE PRO)`,
+        `📱 *0623 310 006* (SMART MINE)`,
         ``,
         `Au zungumza nasi hapa: https://wa.me/255623310006`,
     ].filter(Boolean).join("\n")

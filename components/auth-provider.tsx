@@ -54,7 +54,7 @@ const AuthContext = createContext<AuthContextValue>({
 })
 
 // Routes that should never trigger auth network calls
-const PUBLIC_ROUTES = ['/', '/auth', '/chimbo', '/landing', '/gate']
+const PUBLIC_ROUTES = ['/', '/auth', '/chimbo', '/landing', '/gate', '/login', '/small', '/medium']
 function isPublicPath(pathname: string | null) {
   if (!pathname) return false
   return PUBLIC_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'))
@@ -217,30 +217,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = '/auth/login'
   }
 
-  // The PBAC Routing Logic Matrix
-    const hasAccess = (module: string) => {
-
-    
+    const hasAccess = (modulePath: string) => {
     if (!profile) return false
-    const userRole = profile.role // e.g. 'Investor', 'Manager', 'Blaster' ...
+    const userRole = profile.role
     const enabledModules = (profile as any).enabled_modules || []
 
     // ─── Super Admin overrides everything ──────────────────────────────────
     if (userRole === 'SUPER_ADMIN') return true
 
+    // ─── Support nested path like 'inventory.blasting' ──────────────────────
+    const [mainModule, subModule] = modulePath.toLowerCase().split('.')
+
     // ─── Company-level module subscription gate ─────────────────────────────
     const subscriptionGated = [
       'blasting', 'drilling', 'diamond-drilling',
       'material-handling', 'fleet', 'inventory',
-      'geophysics', 'safety'
+      'geophysics', 'safety', 'finance'
     ]
-    if (subscriptionGated.includes(module.toLowerCase()) && !enabledModules.includes(module.toLowerCase())) {
-      return false
+
+    if (subscriptionGated.includes(mainModule)) {
+      if (Array.isArray(enabledModules)) {
+        // Legacy array support
+        if (!enabledModules.includes(mainModule)) return false
+      } else {
+        // New object support
+        const config = enabledModules[mainModule]
+        if (!config) return false
+        
+        // Check sub-module if path is nested
+        if (subModule && typeof config === 'object') {
+          if (!config[subModule]) return false
+        }
+      }
     }
 
     // ─── RBAC Role Matrix ───────────────────────────────────────────────────
-    // Matches the 10-role permission matrix exactly.
-    // 'none' = module hidden entirely. Any other level = accessible.
     const ROUTE_ACCESS: Record<string, string[]> = {
       'blasting':          ['Investor', 'Manager', 'Geologist', 'Blaster', 'Supervisor'],
       'drilling':          ['Investor', 'Manager', 'Geologist', 'Driller', 'Supervisor'],
@@ -254,16 +265,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       'billing':           ['Investor', 'Manager', 'Accountant'],
       'reports':           ['Investor', 'Manager', 'Accountant', 'Geologist', 'Stock Keeper', 'Supervisor'],
       'safety':            ['Investor', 'Manager', 'Geologist', 'Blaster', 'Driller', 'Diamond Driller', 'Supervisor'],
-      // Always accessible
       'admin':             ['Investor', 'Manager', 'Accountant', 'Geologist', 'Blaster', 'Driller', 'Diamond Driller', 'Stock Keeper', 'Supervisor', 'Driver/Operator'],
       'home':              ['Investor', 'Manager', 'Accountant', 'Geologist', 'Blaster', 'Driller', 'Diamond Driller', 'Stock Keeper', 'Supervisor', 'Driver/Operator'],
       'map':               ['Investor', 'Manager', 'Accountant', 'Geologist', 'Blaster', 'Driller', 'Diamond Driller', 'Stock Keeper', 'Supervisor', 'Driver/Operator'],
-      'super-admin':       [],   // Only SUPER_ADMIN (handled above)
-      'chimbo':            [],   // Small Scale — never shown inside MSM sidebar
     }
 
-    const allowed = ROUTE_ACCESS[module.toLowerCase()]
-    if (allowed === undefined) return true  // unknown module — allow (fail-open for UI)
+    const allowed = ROUTE_ACCESS[mainModule]
+    if (allowed === undefined) return true 
     return allowed.includes(userRole ?? '')
   }
 

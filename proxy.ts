@@ -38,6 +38,9 @@ export async function proxy(request: NextRequest) {
     pathname === "/gate" ||
     pathname === "/unauthorized" ||
     pathname.startsWith("/auth") ||
+    pathname.startsWith("/login") ||
+    pathname === "/small" ||
+    pathname === "/medium" ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/landing") ||
     pathname === "/chimbo" ||

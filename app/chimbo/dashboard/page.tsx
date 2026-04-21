@@ -29,14 +29,12 @@ export default function ChimboDashboard() {
   const [mounted, setMounted] = useState(false)
   const [account, setAccount] = useState<any>(null)
   
-  const [goldPrice, setGoldPrice] = useState<number | null>(null)
-  const [goldChange, setGoldChange] = useState<number | null>(null)
+  const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null)
 
   const [todayProd, setTodayProd] = useState<any>(null)
   const [todaySafety, setTodaySafety] = useState<any>(null)
   const [todayBlast, setTodayBlast] = useState<any>(null)
   const [todayFuel, setTodayFuel] = useState<any>(null)
-  const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null)
 
   // Data for tables
   const [prodList, setProdList] = useState<any[]>([])
@@ -55,14 +53,6 @@ export default function ChimboDashboard() {
   const [selectedItem, setSelectedItem] = useState<any>(null)
 
   useEffect(() => {
-    fetch("/api/gold-price")
-      .then(res => res.json())
-      .then(data => {
-        if (data.price) setGoldPrice(data.price)
-        if (data.change !== undefined) setGoldChange(data.change)
-      })
-      .catch(err => console.error("Error fetching gold price:", err))
-
     const acc = getActiveAccount()
     if (!acc) { router.replace("/chimbo"); return }
     setAccount(acc)
@@ -227,15 +217,11 @@ export default function ChimboDashboard() {
       {/* 📜 Marquee Banner */}
       <div className="bg-white dark:bg-slate-950 border-y border-slate-200 dark:border-slate-800 py-3 -mx-4 mb-2 overflow-hidden">
         <div className="animate-marquee whitespace-nowrap flex gap-10">
-          <span className="text-[10px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-[0.3em] italic">
-            ✦ SMART MINE ✦ MFUMO WA KISASA WA KUSIMAMIA MGODI ✦ TEKNOLOJIA KWA WACHIMBAJI ✦
-          </span>
-          <span className="text-[10px] font-black text-slate-900 dark:text-white/50 uppercase tracking-[0.3em]">
-            BEI YA LEO: {goldPrice ? goldPrice.toLocaleString() : "..."} TSH ✦ 
-          </span>
-          <span className="text-[10px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-[0.3em] italic">
-            ✦ SMART MINE ✦ MFUMO WA KISASA WA KUSIMAMIA MGODI ✦ TEKNOLOJIA KWA WACHIMBAJI ✦
-          </span>
+          {[1,2,3,4].map(i => (
+            <span key={i} className="text-[10px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-[0.3em] italic">
+              ✦ SMART MINE ✦ MFUMO WA KISASA WA KUSIMAMIA MGODI ✦ USIMAMIZI BORA, TIJA ZAIDI ✦ TEKNOLOJIA KWA WACHIMBAJI ✦
+            </span>
+          ))}
         </div>
       </div>
       
@@ -263,39 +249,7 @@ export default function ChimboDashboard() {
         <ModuleHelpNotebook moduleTitle="Dashbodi Kuu" />
       </div>
 
-      {/* Gold price widget — MANAGER only */}
-      {isManager && (
-        <div className="group relative bg-gradient-to-br from-amber-500 to-orange-600 rounded-[2.5rem] p-8 overflow-hidden shadow-2xl shadow-amber-500/20">
-          <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20 blur-2xl" />
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 font-sans">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-                <p className="text-[10px] font-black text-slate-950 uppercase tracking-[0.4em] opacity-80 italic">BEI ELEKEZI YA DHAHABU (SOKO LA DUNIA)</p>
-              </div>
-              <h2 className="text-6xl font-black text-slate-950 tracking-tighter leading-none">
-                {goldPrice ? `${goldPrice.toLocaleString()}` : "..."} <span className="text-xl">TSh</span>
-              </h2>
-              <p className="text-xs font-bold text-slate-950/60 uppercase tracking-widest flex items-center gap-1">
-                {goldChange !== null ? (
-                  <>
-                    {goldChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                    ONGEZEKO: {goldChange >= 0 ? "+" : ""}{goldChange}%
-                  </>
-                ) : "Inasoma..."}
-              </p>
-            </div>
-            <div className="h-px w-full md:w-px md:h-20 bg-slate-950/10" />
-            <div className="space-y-1">
-              <p className="text-[10px] font-black text-slate-950 uppercase tracking-[0.2em] opacity-60">Thamani ya 10g</p>
-              <p className="text-2xl font-black text-slate-950 leading-none">TSh {goldPrice ? (goldPrice * 10).toLocaleString() : "..."}/=</p>
-              <Link href="/chimbo/bei-dhahabu" className="inline-block mt-3 px-4 py-2 bg-slate-950 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl">
-                  Fungua Calculator →
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Gold Price Widget logic removed per user request */}
 
       {/* ── Quick Actions — MANAGER only */}
       {isManager && (

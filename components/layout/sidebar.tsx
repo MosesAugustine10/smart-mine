@@ -111,7 +111,7 @@ export function Sidebar() {
         <div className="h-7 w-7 rounded-lg bg-amber-500 flex items-center justify-center shrink-0">
           <Mountain className="h-4 w-4 text-white" />
         </div>
-        <span className="font-bold text-sm text-slate-900 dark:text-white tracking-tight">Smart Mine</span>
+        <span className="font-bold text-sm text-slate-900 dark:text-white tracking-tight uppercase">SMART MINE</span>
       </div>
 
       {/* ── User Badge ────────────────────────────────────────────────────── */}

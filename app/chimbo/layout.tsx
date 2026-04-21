@@ -14,12 +14,7 @@ import { useChimboSession } from "@/hooks/use-chimbo-session"
 
 // ─── Manager-only routes (SUPERVISOR is redirected away) ──────────────────────
 const MANAGER_ONLY_ROUTES = [
-  "/chimbo/mauzo",
-  "/chimbo/matumizi",
-  "/chimbo/ripoti",
-  "/chimbo/vibarua",
   "/chimbo/ramani",
-  "/chimbo/bei-dhahabu",
 ]
 
 // ─── Bottom navigation ────────────────────────────────────────────────────────
@@ -50,7 +45,6 @@ const MANAGER_MODULES = [
       { label: "Mauzo ya Osha",  icon: DollarSign,   href: "/chimbo/mauzo",        color: "text-emerald-500" },
       { label: "Matumizi",       icon: DollarSign,   href: "/chimbo/matumizi",     color: "text-red-400" },
       { label: "Invoices / Malipo", icon: Crown,      href: "/chimbo/billing",      color: "text-amber-500" },
-      { label: "Bei ya Dhahabu", icon: BarChart3,    href: "/chimbo/bei-dhahabu",  color: "text-amber-500" },
     ],
   },
   {

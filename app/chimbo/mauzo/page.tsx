@@ -121,8 +121,6 @@ export default function MauzoPage() {
                         className="w-full h-24 pl-20 pr-8 rounded-[3rem] bg-slate-100/50 dark:bg-slate-950/50 border-2 border-slate-200 dark:border-white/5 focus:border-emerald-500/50 text-slate-900 dark:text-white font-black text-3xl outline-none transition-all shadow-inner" />
                 </div>
                 <div className="flex items-center gap-2 pl-6">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-[10px] text-slate-500 font-bold italic uppercase tracking-wider">Bei ya soko leo: ~388,500/=</p>
                 </div>
             </div>
 
