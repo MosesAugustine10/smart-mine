@@ -45,6 +45,11 @@ export function UserManagementPanel() {
   const [tempPassword, setTempPassword] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [saving, setSaving] = useState(false)
+  
+  // Password Reset Requests
+  const [resetRequests, setResetRequests] = useState<any[]>([])
+  const [resetModalUser, setResetModalUser] = useState<UserRecord | null>(null)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   const [newUser, setNewUser] = useState({ full_name: "", email: "", roles: [] as string[] })
   const [editRoles, setEditRoles] = useState<string[]>([])
@@ -55,7 +60,12 @@ export function UserManagementPanel() {
       const res = await fetch("/api/super-admin/users")
       const data = await res.json()
       setUsers(data.users || [])
-    } catch { toast({ title: "Error loading users", variant: "destructive" }) }
+      
+      // Load reset requests
+      const reqRes = await fetch("/api/super-admin/password-resets")
+      const reqData = await reqRes.json()
+      setResetRequests(reqData.requests || [])
+    } catch { toast({ title: "Error loading management data", variant: "destructive" }) }
     finally { setLoading(false) }
   }, [toast])
 
@@ -124,6 +134,26 @@ export function UserManagementPanel() {
     } finally { setSaving(false) }
   }
 
+  const handleResetPassword = async () => {
+    if (!resetModalUser) return
+    setSaving(true)
+    try {
+      const res = await fetch("/api/super-admin/password-resets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: resetModalUser.id })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setTempPassword(data.tempPassword)
+      setShowResetConfirm(false)
+      loadUsers()
+      toast({ title: "✅ Password Reset Complete" })
+    } catch (e: any) {
+      toast({ title: "Reset Failed", description: e.message, variant: "destructive" })
+    } finally { setSaving(false) }
+  }
+
   const copyPassword = () => {
     if (tempPassword) {
       navigator.clipboard.writeText(tempPassword)
@@ -148,6 +178,32 @@ export function UserManagementPanel() {
             </Button>
           </div>
         </div>
+        
+        {/* Pending Password Reset Requests Section */}
+        {resetRequests.length > 0 && (
+          <div className="mt-6 px-2">
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <RefreshCw className="w-4 h-4 text-amber-600 animate-spin-slow" />
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-700">Pending Reset Requests</h4>
+              </div>
+              <div className="space-y-2">
+                {resetRequests.map(req => (
+                  <div key={req.id} className="flex items-center justify-between bg-white/80 p-3 rounded-xl border border-amber-100">
+                    <div>
+                      <p className="text-xs font-black text-slate-800">{req.user_email}</p>
+                      <p className="text-[9px] font-bold text-slate-400">{new Date(req.requested_at).toLocaleString()}</p>
+                    </div>
+                    <Button size="sm" onClick={() => { setResetModalUser(users.find(u => u.email === req.user_email) || null); setShowResetConfirm(true); }} className="h-8 rounded-lg bg-amber-600 hover:bg-amber-700 text-[9px] font-black uppercase tracking-widest">
+                      Resolve Now
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="relative mt-4">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input value={search} onChange={e => setSearch(e.target.value)}
@@ -196,6 +252,10 @@ export function UserManagementPanel() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 justify-end">
+                        <Button size="sm" variant="ghost" onClick={() => { setResetModalUser(u); setShowResetConfirm(true); }}
+                          className="h-8 w-8 p-0 rounded-xl hover:bg-amber-50 hover:text-amber-600" title="Reset Password">
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </Button>
                         <Button size="sm" variant="ghost" onClick={() => { setEditUser(u); setEditRoles(u.roles?.length ? u.roles : [u.role]) }}
                           className="h-8 w-8 p-0 rounded-xl hover:bg-blue-50 hover:text-blue-600">
                           <Edit className="w-3.5 h-3.5" />
@@ -321,6 +381,28 @@ export function UserManagementPanel() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* MANUAL PASSWORD RESET CONFIRMATION */}
+      <Dialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <DialogContent className="rounded-[2.5rem] border-2 p-10 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black uppercase tracking-tight text-amber-600">Reset User Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm font-medium text-slate-600 leading-relaxed">
+              Are you sure you want to reset the password for <strong>{resetModalUser?.email}</strong>? 
+              A new temporary password will be generated and displayed for you to share manually.
+            </p>
+          </div>
+          <DialogFooter className="gap-3">
+            <Button variant="outline" onClick={() => setShowResetConfirm(false)} className="rounded-xl border-2 h-12">Cancel</Button>
+            <Button onClick={handleResetPassword} disabled={saving} className="rounded-xl h-12 bg-amber-600 hover:bg-amber-700 text-white font-black uppercase tracking-widest">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+              Generate Temp Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

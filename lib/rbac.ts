@@ -5,6 +5,7 @@
 
 export const ALL_ROLES = [
   "SUPER_ADMIN",
+  "company_admin",
   "admin",
   "manager",
   "accountant",
@@ -22,7 +23,8 @@ export type AppRole = typeof ALL_ROLES[number]
 
 export const ROLE_LABELS: Record<AppRole, string> = {
   SUPER_ADMIN: "Super Admin",
-  admin: "Company Admin",
+  company_admin: "Company Admin",
+  admin: "Admin",
   manager: "Manager",
   accountant: "Accountant",
   blaster: "Blaster",
@@ -37,6 +39,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 
 export const ROLE_COLORS: Record<AppRole, string> = {
   SUPER_ADMIN: "bg-purple-100 text-purple-800 border-purple-200",
+  company_admin: "bg-indigo-600 text-white border-indigo-700",
   admin: "bg-indigo-100 text-indigo-800 border-indigo-200",
   manager: "bg-blue-100 text-blue-800 border-blue-200",
   accountant: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -51,28 +54,26 @@ export const ROLE_COLORS: Record<AppRole, string> = {
 }
 
 // High-privilege roles that require TOTP
-export const HIGH_PRIVILEGE_ROLES: AppRole[] = ["SUPER_ADMIN", "admin", "accountant"]
+export const HIGH_PRIVILEGE_ROLES: AppRole[] = ["SUPER_ADMIN", "company_admin", "admin", "accountant"]
 
 // Module access matrix
-// Key: route segment (matches app directory name)
-// Value: roles that can access (empty array = no restriction beyond login)
 export const MODULE_ACCESS: Record<string, AppRole[]> = {
   "super-admin": ["SUPER_ADMIN"],
-  "admin": ["SUPER_ADMIN", "admin"],
-  "blasting": ["SUPER_ADMIN", "admin", "manager", "blaster"],
-  "drilling": ["SUPER_ADMIN", "admin", "manager", "driller"],
-  "diamond-drilling": ["SUPER_ADMIN", "admin", "manager", "diamond_driller", "geologist"],
-  "geophysics": ["SUPER_ADMIN", "admin", "manager", "geologist", "geophysics_engineer"],
-  "material-handling": ["SUPER_ADMIN", "admin", "manager", "driver_operator"],
-  "fleet": ["SUPER_ADMIN", "admin", "manager", "driver_operator", "spotter"],
-  "inventory": ["SUPER_ADMIN", "admin", "manager", "stock_keeper"],
-  "finance": ["SUPER_ADMIN", "admin", "accountant"],
-  "invoices": ["SUPER_ADMIN", "admin", "accountant"],
-  "safety": ["SUPER_ADMIN", "admin", "manager", "blaster", "driller", "diamond_driller", "driver_operator"],
-  "map": ["SUPER_ADMIN", "admin", "manager"],
-  "reports": ["SUPER_ADMIN", "admin", "manager"],
+  "admin": ["SUPER_ADMIN", "company_admin", "admin"],
+  "blasting": ["SUPER_ADMIN", "company_admin", "admin", "manager", "blaster"],
+  "drilling": ["SUPER_ADMIN", "company_admin", "admin", "manager", "driller"],
+  "diamond-drilling": ["SUPER_ADMIN", "company_admin", "admin", "manager", "diamond_driller", "geologist"],
+  "geophysics": ["SUPER_ADMIN", "company_admin", "admin", "manager", "geologist", "geophysics_engineer"],
+  "material-handling": ["SUPER_ADMIN", "company_admin", "admin", "manager", "driver_operator"],
+  "fleet": ["SUPER_ADMIN", "company_admin", "admin", "manager", "driver_operator", "spotter"],
+  "inventory": ["SUPER_ADMIN", "company_admin", "admin", "manager", "stock_keeper"],
+  "finance": ["SUPER_ADMIN", "company_admin", "admin", "accountant"],
+  "invoices": ["SUPER_ADMIN", "company_admin", "admin", "accountant"],
+  "safety": ["SUPER_ADMIN", "company_admin", "admin", "manager", "blaster", "driller", "diamond_driller", "driver_operator"],
+  "map": ["SUPER_ADMIN", "company_admin", "admin", "manager"],
+  "reports": ["SUPER_ADMIN", "company_admin", "admin", "manager"],
 
-  "settings": ["SUPER_ADMIN", "admin"],
+  "settings": ["SUPER_ADMIN", "company_admin"], // 'admin' cannot change settings/branding
 }
 
 // Navigation modules shown per role (for sidebar)
@@ -85,7 +86,7 @@ export function hasRole(userRoles: string | string[], requiredRole: AppRole): bo
 
 export function canAccessModule(userRoles: string | string[], module: string): boolean {
   const allowed = MODULE_ACCESS[module]
-  if (!allowed) return true // unknown module = open
+  if (!allowed) return true 
   const roles = Array.isArray(userRoles) ? userRoles : [userRoles]
   if (roles.includes("SUPER_ADMIN")) return true
   return roles.some(r => (allowed as string[]).includes(r))
@@ -94,3 +95,4 @@ export function canAccessModule(userRoles: string | string[], module: string): b
 export function isHighPrivilege(roles: string[]): boolean {
   return roles.some(r => (HIGH_PRIVILEGE_ROLES as string[]).includes(r))
 }
+

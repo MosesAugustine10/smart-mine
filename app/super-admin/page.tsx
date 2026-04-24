@@ -13,9 +13,14 @@ import {
     Database, ActivitySquare, Cpu, Search, Plus, Settings,
     LayoutDashboard, Globe, AlertCircle, TrendingUp, HardHat, Compass,
     Zap, Pickaxe, Diamond, Layers, Truck, Package, ShieldAlert, Loader2, Phone,
-    Flag, ImageIcon, HeartPulse, Archive, ClipboardList, Upload, Trash2, CheckCircle2
+    Flag, ImageIcon, HeartPulse, Archive, ClipboardList, Upload, Trash2, CheckCircle2,
+    RefreshCw
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter 
+} from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { UserManagementPanel } from "@/components/admin/user-management-panel"
@@ -88,8 +93,8 @@ export default function SuperAdminDashboard() {
 
   const vibe = () => { if (typeof navigator !== 'undefined') navigator.vibrate?.(40) }
   
-  // Tab state for 6 sections
-  const [activeTab, setActiveTab] = useState<"users"|"audit"|"flags"|"branding"|"health"|"backup">("users")
+  // Tab state for 7 sections
+  const [activeTab, setActiveTab] = useState<"companies"|"users"|"audit"|"flags"|"branding"|"health"|"backup">("companies")
 
   // Audit logs
   const [auditLogs, setAuditLogs] = useState<any[]>([])
@@ -108,6 +113,13 @@ export default function SuperAdminDashboard() {
   // Backup logs
   const [backupLogs, setBackupLogs] = useState<any[]>([])
   const [backupRunning, setBackupRunning] = useState(false)
+
+  // Company management
+  const [allCompanies, setAllCompanies] = useState<any[]>([])
+  const [companiesLoading, setCompaniesLoading] = useState(false)
+  const [showAddCompany, setShowAddCompany] = useState(false)
+  const [newCompany, setNewCompany] = useState({ companyName: "", adminFullName: "", adminEmail: "" })
+  const [tempAdminPass, setTempAdminPass] = useState<string | null>(null)
 
   // System health
   const [health, setHealth] = useState({ activeUsers: 0, pendingSyncs: 0, lastBackup: "—", uptime: "99.9%", dbUsage: "0.0 GB" })
@@ -130,6 +142,37 @@ export default function SuperAdminDashboard() {
     setAuditLoading(false)
   }, [auditFilter])
 
+  // Load all companies
+  const loadAllCompanies = useCallback(async () => {
+    setCompaniesLoading(true)
+    try {
+      const res = await fetch("/api/super-admin/companies")
+      const data = await res.json()
+      setAllCompanies(data.companies || [])
+    } catch { toast({ title: "Error loading companies", variant: "destructive" }) }
+    finally { setCompaniesLoading(false) }
+  }, [toast])
+
+  const handleAddCompany = async () => {
+    if (!newCompany.companyName || !newCompany.adminEmail) return
+    setIsSaving(true)
+    try {
+      const res = await fetch("/api/super-admin/companies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newCompany)
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setTempAdminPass(data.tempPassword)
+      setNewCompany({ companyName: "", adminFullName: "", adminEmail: "" })
+      loadAllCompanies()
+      toast({ title: "✅ Company & Admin Created" })
+    } catch (e: any) {
+      toast({ title: "Creation Failed", description: e.message, variant: "destructive" })
+    } finally { setIsSaving(false) }
+  }
+
   // Load brands + flags + backup logs
   useEffect(() => {
     if (loading || !profile) return
@@ -143,6 +186,7 @@ export default function SuperAdminDashboard() {
   }, [loading, profile])
 
   useEffect(() => { if (activeTab === "audit") loadAudit() }, [activeTab, loadAudit])
+  useEffect(() => { if (activeTab === "companies") loadAllCompanies() }, [activeTab, loadAllCompanies])
 
   const toggleFlag = async (flag: any) => {
     setFlagSaving(true)
@@ -301,6 +345,7 @@ export default function SuperAdminDashboard() {
   }
 
   const TABS = [
+    { id: "companies", label: "Manage Companies", icon: Building2 },
     { id: "users",    label: "User Management",   icon: Users },
     { id: "audit",    label: "Audit Logs",        icon: ClipboardList },
     { id: "flags",    label: "Feature Flags",     icon: Flag },
@@ -390,6 +435,111 @@ export default function SuperAdminDashboard() {
             </button>
           ))}
         </div>
+
+        {/* ── TAB: COMPANIES ── */}
+        {activeTab === "companies" && (
+          <Card className="border shadow-2xl rounded-[2.5rem] overflow-hidden border-slate-100 bg-white">
+            <CardHeader className="p-8 pb-4 border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-emerald-500" /> Organization Directory
+                </CardTitle>
+                <Button onClick={() => setShowAddCompany(true)} className="rounded-xl h-10 bg-emerald-600 hover:bg-emerald-700 gap-2">
+                  <Plus className="w-4 h-4" /> Add Organization
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {companiesLoading ? (
+                <div className="flex items-center justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-emerald-500" /></div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead><tr className="bg-slate-50 border-b">
+                      {["Company Name","Created Date","Total Users","Status","Actions"].map(h => (
+                        <th key={h} className="text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500">{h}</th>
+                      ))}
+                    </tr></thead>
+                    <tbody>
+                      {allCompanies.map(c => (
+                        <tr key={c.id} className="border-b hover:bg-slate-50/70 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="font-black text-slate-900">{c.name}</div>
+                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{c.id.slice(0,8)}</div>
+                          </td>
+                          <td className="px-6 py-4 text-xs font-bold text-slate-500">
+                            {format(new Date(c.created_at), "dd MMM yyyy")}
+                          </td>
+                          <td className="px-6 py-4">
+                            <Badge variant="outline" className="rounded-full bg-blue-50 text-blue-700 border-blue-100 font-black px-3">
+                              {c.userCount} Users
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full">ACTIVE</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <Button size="sm" variant="ghost" className="rounded-xl hover:bg-slate-900 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest">
+                              Launch Dashboard
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+
+            {/* Add Company Modal */}
+            <Dialog open={showAddCompany} onOpenChange={setShowAddCompany}>
+              <DialogContent className="rounded-[2.5rem] border-2 max-w-lg p-8">
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-black uppercase tracking-tight">Provision New Organization</DialogTitle>
+                </DialogHeader>
+                {!tempAdminPass ? (
+                  <div className="space-y-4 mt-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Company Name</Label>
+                      <Input value={newCompany.companyName} onChange={e => setNewCompany({...newCompany, companyName: e.target.value})} placeholder="e.g. Tanzanite Mines Ltd" className="rounded-xl border-2 h-12" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Admin Full Name</Label>
+                      <Input value={newCompany.adminFullName} onChange={e => setNewCompany({...newCompany, adminFullName: e.target.value})} placeholder="John Doe" className="rounded-xl border-2 h-12" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Admin Email</Label>
+                      <Input type="email" value={newCompany.adminEmail} onChange={e => setNewCompany({...newCompany, adminEmail: e.target.value})} placeholder="admin@company.com" className="rounded-xl border-2 h-12" />
+                    </div>
+                    <Button onClick={handleAddCompany} disabled={isSaving} className="w-full h-12 rounded-xl bg-slate-900 hover:bg-black text-white font-black uppercase tracking-widest mt-4">
+                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                      Create Organization
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-6 mt-4">
+                    <Alert className="rounded-2xl border-amber-200 bg-amber-50 p-6">
+                      <ShieldCheck className="h-5 w-5 text-amber-600" />
+                      <AlertDescription>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-2">Temporary Admin Password</p>
+                        <div className="flex items-center gap-3">
+                          <code className="text-xl font-black tracking-widest text-amber-900 bg-white px-4 py-2 rounded-xl border border-amber-200">{tempAdminPass}</code>
+                          <Button size="sm" onClick={() => { navigator.clipboard.writeText(tempAdminPass); toast({title: "Copied!"}) }} className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white">Copy</Button>
+                        </div>
+                        <p className="text-[9px] text-amber-600 font-bold mt-4 leading-relaxed">
+                          Organization provisioning complete. Share this password with the primary admin. They will be required to change it on first login.
+                        </p>
+                      </AlertDescription>
+                    </Alert>
+                    <Button onClick={() => { setShowAddCompany(false); setTempAdminPass(null); }} className="w-full h-12 rounded-xl bg-slate-900 text-white font-black uppercase tracking-widest">
+                      Close & Finish
+                    </Button>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+          </Card>
+        )}
 
         {/* ── TAB: USER MANAGEMENT ── */}
         {activeTab === "users" && <UserManagementPanel />}

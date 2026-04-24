@@ -29,16 +29,15 @@ export default function ForgotPasswordPage() {
       // Get user profile to get full name if possible
       const { data: profile } = await supabase
         .from('user_profiles')
-        .select('id, first_name, last_name')
+        .select('id, first_name, last_name, company_id')
         .eq('email', email)
         .maybeSingle()
 
       const { error } = await supabase
         .from('password_reset_requests')
         .insert({
-          user_id: profile?.id || null,
-          email: email,
-          full_name: profile ? `${profile.first_name} ${profile.last_name}` : 'Unknown User',
+          user_email: email,
+          company_id: profile?.company_id || null,
           status: 'pending'
         })
 

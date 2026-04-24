@@ -19,7 +19,7 @@ export async function GET() {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { data: caller } = await supabase.from("user_profiles").select("role, roles").eq("id", user.id).single()
+  const { data: caller } = await supabase.from("user_profiles").select("role, roles, company_id").eq("id", user.id).single()
   const callerRoles: string[] = caller?.roles || [caller?.role].filter(Boolean)
   if (!callerRoles.includes("SUPER_ADMIN") && !callerRoles.includes("admin")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { data: caller } = await supabase.from("user_profiles").select("role, roles").eq("id", user.id).single()
+  const { data: caller } = await supabase.from("user_profiles").select("role, roles, company_id").eq("id", user.id).single()
   const callerRoles: string[] = caller?.roles || [caller?.role].filter(Boolean)
   if (!callerRoles.includes("SUPER_ADMIN") && !callerRoles.includes("admin")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -123,7 +123,7 @@ export async function PATCH(request: NextRequest) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { data: caller } = await supabase.from("user_profiles").select("role, roles").eq("id", user.id).single()
+  const { data: caller } = await supabase.from("user_profiles").select("role, roles, company_id").eq("id", user.id).single()
   const callerRoles: string[] = caller?.roles || [caller?.role].filter(Boolean)
   if (!callerRoles.includes("SUPER_ADMIN") && !callerRoles.includes("admin")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -132,11 +132,22 @@ export async function PATCH(request: NextRequest) {
   const body = await request.json()
   const { userId, roles, status } = body
 
-  // Prevent non-super-admin from editing SUPER_ADMIN
-  const { data: target } = await supabase.from("user_profiles").select("role, roles").eq("id", userId).single()
+  // Hierarchy checks
+  const { data: target } = await supabase.from("user_profiles").select("role, roles, company_id").eq("id", userId).single()
   const targetRoles: string[] = target?.roles || [target?.role].filter(Boolean)
+  
   if (targetRoles.includes("SUPER_ADMIN") && !callerRoles.includes("SUPER_ADMIN")) {
     return NextResponse.json({ error: "Cannot modify Super Admin" }, { status: 403 })
+  }
+
+  if (!callerRoles.includes("SUPER_ADMIN")) {
+    if (target?.company_id !== caller?.company_id) {
+      return NextResponse.json({ error: "Forbidden: Cross-company access" }, { status: 403 })
+    }
+    // admin cannot modify company_admin
+    if (targetRoles.includes("company_admin") && !callerRoles.includes("company_admin")) {
+      return NextResponse.json({ error: "Forbidden: Admins cannot modify Company Admins" }, { status: 403 })
+    }
   }
 
   const updates: any = {}
@@ -161,7 +172,7 @@ export async function DELETE(request: NextRequest) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { data: caller } = await supabase.from("user_profiles").select("role, roles").eq("id", user.id).single()
+  const { data: caller } = await supabase.from("user_profiles").select("role, roles, company_id").eq("id", user.id).single()
   const callerRoles: string[] = caller?.roles || [caller?.role].filter(Boolean)
   if (!callerRoles.includes("SUPER_ADMIN") && !callerRoles.includes("admin")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -171,11 +182,24 @@ export async function DELETE(request: NextRequest) {
   const userId = searchParams.get("userId")
   if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 })
 
-  // Prevent deleting super admin
-  const { data: target } = await supabase.from("user_profiles").select("role, roles").eq("id", userId).single()
+  // Deletion logic with hierarchy checks
+  const { data: target } = await supabase.from("user_profiles").select("role, roles, company_id").eq("id", userId).single()
   const targetRoles: string[] = target?.roles || [target?.role].filter(Boolean)
+  
   if (targetRoles.includes("SUPER_ADMIN")) {
     return NextResponse.json({ error: "Cannot delete Super Admin" }, { status: 403 })
+  }
+
+  // If caller is NOT Super Admin, check company match and hierarchy
+  if (!callerRoles.includes("SUPER_ADMIN")) {
+    if (target?.company_id !== caller?.company_id) {
+      return NextResponse.json({ error: "Forbidden: Cross-company access" }, { status: 403 })
+    }
+    
+    // admin cannot delete company_admin
+    if (targetRoles.includes("company_admin") && !callerRoles.includes("company_admin")) {
+      return NextResponse.json({ error: "Forbidden: Admins cannot delete Company Admins" }, { status: 403 })
+    }
   }
 
   await supabase.auth.admin.deleteUser(userId)

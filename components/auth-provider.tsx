@@ -35,6 +35,8 @@ export interface UserProfile {
   role: UserRole
   position: UserPosition
   status: string
+  is_temp_password: boolean
+  totp_enabled: boolean
 }
 
 interface AuthContextValue {
@@ -283,8 +285,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
     if (!profile) {
-      router.push('/auth/login')
+      router.push('/login')
       return
+    }
+
+    // ─── 1. MANDATORY PASSWORD CHANGE ───────────────────────────────
+    if (profile.is_temp_password && pathname !== '/auth/change-password') {
+      router.replace('/auth/change-password')
+      return
+    }
+
+    // ─── 2. TOTP ENFORCEMENT ────────────────────────────────────────
+    const { isHighPrivilege } = require("@/lib/rbac")
+    const roles = Array.isArray(profile.role) ? profile.role : [profile.role]
+    
+    if (isHighPrivilege(roles)) {
+      // a. Force Setup
+      if (!profile.totp_enabled && pathname !== '/auth/totp-setup') {
+        router.replace('/auth/totp-setup')
+        return
+      }
+      
+      // b. Force Verification
+      if (profile.totp_enabled && pathname !== '/auth/totp-verify') {
+        const getCookie = (name: string) => {
+          const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+          return match ? match[2] : null
+        }
+        const totpVerified = getCookie('msm_totp_verified')
+        if (!totpVerified) {
+          router.replace('/auth/totp-verify')
+          return
+        }
+      }
     }
 
     if (profile.status === 'pending') {
