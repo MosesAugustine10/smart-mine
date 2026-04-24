@@ -1,20 +1,25 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useAuth } from "@/components/auth-provider"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { 
     Users, Activity, Building2, ShieldCheck, Coins,
     Database, ActivitySquare, Cpu, Search, Plus, Settings,
     LayoutDashboard, Globe, AlertCircle, TrendingUp, HardHat, Compass,
-    Zap, Pickaxe, Diamond, Layers, Truck, Package, ShieldAlert, Loader2, Phone
+    Zap, Pickaxe, Diamond, Layers, Truck, Package, ShieldAlert, Loader2, Phone,
+    Flag, ImageIcon, HeartPulse, Archive, ClipboardList, Upload, Trash2, CheckCircle2
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
+import { UserManagementPanel } from "@/components/admin/user-management-panel"
+import { format } from "date-fns"
 
 export default function SuperAdminDashboard() {
   const { profile, loading } = useAuth()
@@ -34,10 +39,7 @@ export default function SuperAdminDashboard() {
   // Companies loaded from Supabase
   const [companies, setCompanies] = useState<any[]>([])
   const [leads, setLeads] = useState<any[]>([])
-  const [consultantFlagEnabled, setConsultantFlagEnabled] = useState(false)
-  const [selcomFlagEnabled, setSelcomFlagEnabled] = useState(false)
-  const [whatsappFlagEnabled, setWhatsappFlagEnabled] = useState(false)
-  const [flagLoading, setFlagLoading] = useState(false)
+  // Feature flags removed
 
   // Load real companies from Supabase on mount
   React.useEffect(() => {
@@ -78,11 +80,7 @@ export default function SuperAdminDashboard() {
         .select('flag_name, is_enabled')
       
       if (data) {
-        data.forEach((flag: any) => {
-          if (flag.flag_name === 'show_consultant_pricing') setConsultantFlagEnabled(flag.is_enabled)
-          if (flag.flag_name === 'enable_selcom') setSelcomFlagEnabled(flag.is_enabled)
-          if (flag.flag_name === 'enable_whatsapp_api') setWhatsappFlagEnabled(flag.is_enabled)
-        })
+        // Feature flags removed
       }
     }
     loadFlags()
@@ -90,10 +88,116 @@ export default function SuperAdminDashboard() {
 
   const vibe = () => { if (typeof navigator !== 'undefined') navigator.vibrate?.(40) }
   
+  // Tab state for 6 sections
+  const [activeTab, setActiveTab] = useState<"users"|"audit"|"flags"|"branding"|"health"|"backup">("users")
+
+  // Audit logs
+  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [auditLoading, setAuditLoading] = useState(false)
+  const [auditFilter, setAuditFilter] = useState({ user: "", module: "", from: "", to: "" })
+
+  // Branding
+  const [brands, setBrands] = useState<any[]>([])
+  const [newBrand, setNewBrand] = useState({ brand_name: "", logo_url: "", tagline: "" })
+  const [brandSaving, setBrandSaving] = useState(false)
+
+  // Feature flags
+  const [flags, setFlags] = useState<any[]>([])
+  const [flagSaving, setFlagSaving] = useState(false)
+
+  // Backup logs
+  const [backupLogs, setBackupLogs] = useState<any[]>([])
+  const [backupRunning, setBackupRunning] = useState(false)
+
+  // System health
+  const [health, setHealth] = useState({ activeUsers: 0, pendingSyncs: 0, lastBackup: "—", uptime: "99.9%", dbUsage: "0.0 GB" })
+
   // Additional state hooks MUST be above early returns
   const [selectedCompany, setSelectedCompany] = useState<any>(null)
   const [modulesModalOpen, setModulesModalOpen] = useState(false)
   const [activeModules, setActiveModules] = useState<string[]>([])
+
+  // Load audit logs
+  const loadAudit = useCallback(async () => {
+    setAuditLoading(true)
+    const supabase = getSupabaseBrowserClient()
+    let q = supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(100)
+    if (auditFilter.module) q = q.eq("module", auditFilter.module)
+    if (auditFilter.from) q = q.gte("created_at", auditFilter.from)
+    if (auditFilter.to) q = q.lte("created_at", auditFilter.to + "T23:59:59")
+    const { data } = await q
+    setAuditLogs(data || [])
+    setAuditLoading(false)
+  }, [auditFilter])
+
+  // Load brands + flags + backup logs
+  useEffect(() => {
+    if (loading || !profile) return
+    const supabase = getSupabaseBrowserClient()
+    supabase.from("brands").select("*").order("created_at").then(({ data }: { data: any }) => setBrands(data || []))
+    supabase.from("system_flags").select("*").then(({ data }: { data: any }) => setFlags(data || []))
+    supabase.from("backup_logs").select("*").order("created_at", { ascending: false }).limit(10).then(({ data }: { data: any }) => setBackupLogs(data || []))
+    supabase.from("user_profiles").select("id", { count: "exact", head: true }).then(({ count }: { count: number | null }) => {
+      setHealth(h => ({ ...h, activeUsers: count || 0 }))
+    })
+  }, [loading, profile])
+
+  useEffect(() => { if (activeTab === "audit") loadAudit() }, [activeTab, loadAudit])
+
+  const toggleFlag = async (flag: any) => {
+    setFlagSaving(true)
+    const supabase = getSupabaseBrowserClient()
+    await supabase.from("system_flags").update({ is_enabled: !flag.is_enabled, updated_at: new Date().toISOString() }).eq("flag_name", flag.flag_name)
+    setFlags(fs => fs.map(f => f.flag_name === flag.flag_name ? { ...f, is_enabled: !f.is_enabled } : f))
+    setFlagSaving(false)
+    toast({ title: `Flag ${!flag.is_enabled ? "enabled" : "disabled"}: ${flag.flag_name}` })
+  }
+
+  const addBrand = async () => {
+    if (!newBrand.brand_name) return
+    setBrandSaving(true)
+    const supabase = getSupabaseBrowserClient()
+    const { data } = await supabase.from("brands").insert(newBrand).select().single()
+    if (data) setBrands(b => [...b, data])
+    setNewBrand({ brand_name: "", logo_url: "", tagline: "" })
+    setBrandSaving(false)
+    toast({ title: "✅ Brand added" })
+  }
+
+  const deleteBrand = async (id: string) => {
+    const supabase = getSupabaseBrowserClient()
+    await supabase.from("brands").delete().eq("id", id)
+    setBrands(b => b.filter(br => br.id !== id))
+    toast({ title: "Brand removed" })
+  }
+
+  const setDefaultBrand = async (id: string) => {
+    const supabase = getSupabaseBrowserClient()
+    await supabase.from("brands").update({ is_default: false }).neq("id", id)
+    await supabase.from("brands").update({ is_default: true }).eq("id", id)
+    setBrands(b => b.map(br => ({ ...br, is_default: br.id === id })))
+    toast({ title: "✅ Default brand set" })
+  }
+
+  const runBackup = async () => {
+    setBackupRunning(true)
+    vibe()
+    try {
+      const response = await fetch("/api/backup")
+      const data = await response.json()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a"); a.href = url
+      a.download = `SmartMinePro_Backup_${new Date().toISOString().split("T")[0]}.json`; a.click()
+      toast({ title: "✅ Backup Complete", description: `${data.totalRecords} records exported.` })
+      // Reload backup logs
+      const supabase = getSupabaseBrowserClient()
+      const { data: logs } = await supabase.from("backup_logs").select("*").order("created_at", { ascending: false }).limit(10)
+      setBackupLogs(logs || [])
+    } catch (e: any) {
+      toast({ title: "Backup failed", description: e.message, variant: "destructive" })
+    } finally { setBackupRunning(false) }
+  }
 
   // 1. Show nothing or a skeleton while loading to prevent 'Clearance Denied' flash
   if (loading) {
@@ -182,9 +286,9 @@ export default function SuperAdminDashboard() {
           
           window.open('/chimbo/dashboard', '_blank')
       } else {
-          // For Medium Scale, we rewrite the Super Admin cookie to temporarily target THIS specific company.
-          // This allows the Super Admin to seamlessly hop between different Medium Scale miners
-          // and the system will naturally enforce their specific subscribed modules.
+          // Open tab first
+          const newTab = window.open('/admin', '_blank')
+          // Then set cookie
           const syncData = {
               role: "SUPER_ADMIN",
               cid: company.id,
@@ -193,9 +297,17 @@ export default function SuperAdminDashboard() {
           }
           document.cookie = `msm_user_role=${encodeURIComponent(JSON.stringify(syncData))}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`
           
-          window.open('/admin', '_blank')
       }
   }
+
+  const TABS = [
+    { id: "users",    label: "User Management",   icon: Users },
+    { id: "audit",    label: "Audit Logs",        icon: ClipboardList },
+    { id: "flags",    label: "Feature Flags",     icon: Flag },
+    { id: "branding", label: "Branding",          icon: ImageIcon },
+    { id: "health",   label: "System Health",     icon: HeartPulse },
+    { id: "backup",   label: "Backup",            icon: Archive },
+  ] as const
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto mb-20 px-4 md:px-0">
@@ -265,6 +377,208 @@ export default function SuperAdminDashboard() {
         </Card>
       </div>
 
+      {/* ─── 6-SECTION TABS ─────────────────────────────────────── */}
+      <div className="px-2">
+        {/* Tab Bar */}
+        <div className="flex gap-1 bg-slate-100 rounded-2xl p-1 mb-6 overflow-x-auto">
+          {TABS.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                activeTab === tab.id ? "bg-white shadow-md text-slate-900" : "text-slate-500 hover:text-slate-700"
+              }`}>
+              <tab.icon className="w-3.5 h-3.5" />{tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── TAB: USER MANAGEMENT ── */}
+        {activeTab === "users" && <UserManagementPanel />}
+
+        {/* ── TAB: AUDIT LOGS ── */}
+        {activeTab === "audit" && (
+          <Card className="border shadow-2xl rounded-[2.5rem] overflow-hidden border-slate-100 bg-white">
+            <CardHeader className="p-8 pb-4 border-b">
+              <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-blue-500" /> System Audit Log
+              </CardTitle>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                <Input placeholder="Filter by module" value={auditFilter.module} onChange={e => setAuditFilter(f => ({...f, module: e.target.value}))} className="rounded-xl border-2 h-10 text-xs" />
+                <Input placeholder="Filter by user" value={auditFilter.user} onChange={e => setAuditFilter(f => ({...f, user: e.target.value}))} className="rounded-xl border-2 h-10 text-xs" />
+                <Input type="date" value={auditFilter.from} onChange={e => setAuditFilter(f => ({...f, from: e.target.value}))} className="rounded-xl border-2 h-10 text-xs" />
+                <Button onClick={loadAudit} className="rounded-xl h-10 bg-blue-600 hover:bg-blue-700 text-xs">Filter</Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {auditLoading ? (
+                <div className="flex items-center justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-blue-500" /></div>
+              ) : (
+                <div className="overflow-x-auto max-h-[500px]">
+                  <table className="w-full text-sm">
+                    <thead><tr className="bg-slate-50 border-b sticky top-0">
+                      {["Timestamp","User","Action","Module","Details"].map(h => (
+                        <th key={h} className="text-left px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">{h}</th>
+                      ))}
+                    </tr></thead>
+                    <tbody>
+                      {auditLogs.length === 0 ? (
+                        <tr><td colSpan={5} className="py-12 text-center text-slate-400 font-bold text-sm">No audit events found</td></tr>
+                      ) : auditLogs.map(log => (
+                        <tr key={log.id} className="border-b hover:bg-slate-50/70 transition-colors">
+                          <td className="px-5 py-3 text-[10px] text-slate-500 font-mono whitespace-nowrap">{log.created_at ? format(new Date(log.created_at), "dd MMM HH:mm") : "—"}</td>
+                          <td className="px-5 py-3 text-xs font-bold">{log.actor_name || log.actor_id?.slice(0,8) || "—"}</td>
+                          <td className="px-5 py-3"><span className="text-[9px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{log.action}</span></td>
+                          <td className="px-5 py-3 text-xs font-bold capitalize">{log.module || "—"}</td>
+                          <td className="px-5 py-3 text-[10px] text-slate-500 max-w-xs truncate">{log.details || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── TAB: FEATURE FLAGS ── */}
+        {activeTab === "flags" && (
+          <Card className="border shadow-2xl rounded-[2.5rem] border-slate-100 bg-white">
+            <CardHeader className="p-8 pb-4 border-b">
+              <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                <Flag className="w-4 h-4 text-amber-500" /> Feature Flags
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 space-y-4">
+              {flags.length === 0 ? (
+                <p className="text-sm text-slate-400 font-bold">No flags configured. Run the database migration SQL first.</p>
+              ) : flags.map(flag => (
+                <div key={flag.flag_name} className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-700">{flag.flag_name}</p>
+                    <p className="text-[9px] font-bold text-slate-400 mt-0.5">{flag.description || ""}</p>
+                  </div>
+                  <button onClick={() => toggleFlag(flag)} disabled={flagSaving}
+                    className={`relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none ${
+                      flag.is_enabled ? "bg-indigo-600 shadow-lg shadow-indigo-500/30" : "bg-slate-300"
+                    }`}>
+                    <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300 ${flag.is_enabled ? "left-8" : "left-1"}`} />
+                  </button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── TAB: BRANDING ── */}
+        {activeTab === "branding" && (
+          <div className="space-y-4">
+            <Card className="border shadow-2xl rounded-[2.5rem] border-slate-100 bg-white">
+              <CardHeader className="p-8 pb-4 border-b">
+                <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-violet-500" /> Company Brands
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 space-y-4">
+                {/* Add brand form */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <Input placeholder="Brand name (e.g. Amogtech)" value={newBrand.brand_name} onChange={e => setNewBrand({...newBrand, brand_name: e.target.value})} className="rounded-xl border-2 h-11" />
+                  <Input placeholder="Logo URL" value={newBrand.logo_url} onChange={e => setNewBrand({...newBrand, logo_url: e.target.value})} className="rounded-xl border-2 h-11" />
+                  <Input placeholder="Tagline" value={newBrand.tagline} onChange={e => setNewBrand({...newBrand, tagline: e.target.value})} className="rounded-xl border-2 h-11" />
+                  <Button onClick={addBrand} disabled={brandSaving || !newBrand.brand_name} className="rounded-xl h-11 bg-violet-600 hover:bg-violet-700 gap-2">
+                    <Plus className="w-3.5 h-3.5" /> Add Brand
+                  </Button>
+                </div>
+                {/* Brands list */}
+                {brands.map(brand => (
+                  <div key={brand.id} className="flex items-center justify-between p-5 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                    <div className="flex items-center gap-4">
+                      {brand.logo_url ? (
+                        <img src={brand.logo_url} alt={brand.brand_name} className="h-10 w-10 object-contain rounded-xl border" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                          <ImageIcon className="w-5 h-5 text-slate-400" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-black text-slate-900">{brand.brand_name}</p>
+                        <p className="text-[10px] text-slate-400 font-bold">{brand.tagline}</p>
+                      </div>
+                      {brand.is_default && <span className="text-[9px] bg-emerald-100 text-emerald-700 font-black px-2 py-0.5 rounded-full">DEFAULT</span>}
+                    </div>
+                    <div className="flex gap-2">
+                      {!brand.is_default && (
+                        <Button size="sm" variant="outline" onClick={() => setDefaultBrand(brand.id)} className="rounded-xl border-2 text-xs font-bold">
+                          Set Default
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => deleteBrand(brand.id)} className="rounded-xl hover:bg-red-50 hover:text-red-600 h-8 w-8 p-0">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {brands.length === 0 && <p className="text-sm text-slate-400 font-bold text-center py-6">No brands configured yet</p>}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* ── TAB: SYSTEM HEALTH ── */}
+        {activeTab === "health" && (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[
+              { label: "Active Users", value: health.activeUsers, sub: "Registered profiles", color: "text-blue-600", bg: "from-blue-50", icon: <Users className="w-5 h-5 text-blue-400" /> },
+              { label: "System Uptime", value: health.uptime, sub: "Last 30 days", color: "text-emerald-600", bg: "from-emerald-50", icon: <HeartPulse className="w-5 h-5 text-emerald-400" /> },
+              { label: "Pending Syncs", value: health.pendingSyncs, sub: "Offline queue", color: "text-amber-600", bg: "from-amber-50", icon: <Cpu className="w-5 h-5 text-amber-400" /> },
+              { label: "DB Storage", value: health.dbUsage, sub: "Estimated usage", color: "text-violet-600", bg: "from-violet-50", icon: <Database className="w-5 h-5 text-violet-400" /> },
+              { label: "Last Backup", value: backupLogs[0] ? format(new Date(backupLogs[0].created_at), "dd MMM HH:mm") : "None", sub: "Most recent backup", color: "text-slate-700", bg: "from-slate-50", icon: <Archive className="w-5 h-5 text-slate-400" /> },
+              { label: "DB Status", value: "ONLINE", sub: "Supabase PostgreSQL", color: "text-emerald-600", bg: "from-emerald-50", icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" /> },
+            ].map((card, i) => (
+              <Card key={i} className={`rounded-[2rem] border border-slate-100 bg-gradient-to-br ${card.bg} to-white shadow-lg`}>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-3">{card.icon}<p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{card.label}</p></div>
+                  <p className={`text-2xl font-black ${card.color}`}>{card.value}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{card.sub}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* ── TAB: BACKUP ── */}
+        {activeTab === "backup" && (
+          <Card className="border shadow-2xl rounded-[2.5rem] border-slate-100 bg-white">
+            <CardHeader className="p-8 pb-4 border-b">
+              <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                <Archive className="w-4 h-4 text-indigo-500" /> Backup Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 space-y-6">
+              <Button onClick={runBackup} disabled={backupRunning}
+                className="h-14 px-8 rounded-2xl bg-indigo-600 hover:bg-indigo-700 font-black uppercase tracking-widest text-sm gap-3 shadow-xl shadow-indigo-500/20">
+                {backupRunning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Archive className="w-5 h-5" />}
+                {backupRunning ? "Running Backup..." : "Trigger Manual Backup"}
+              </Button>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Automated daily backups run at midnight. Manual backups download all tables as JSON.</p>
+              <div className="space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Recent Backups</p>
+                {backupLogs.length === 0 ? (
+                  <p className="text-sm text-slate-400 font-bold">No backups yet. Run the first backup above.</p>
+                ) : backupLogs.map(log => (
+                  <div key={log.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-700">{log.backup_type?.toUpperCase()} Backup</p>
+                      <p className="text-[9px] font-bold text-slate-400">{log.record_count} records · {log.created_at ? format(new Date(log.created_at), "dd MMM yyyy HH:mm") : "—"}</p>
+                    </div>
+                    <span className="text-[9px] bg-emerald-100 text-emerald-700 font-black px-2 py-1 rounded-full">COMPLETED</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Legacy Registered Mines Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-2">
         <div className="lg:col-span-2 space-y-6">
           {/* LEADS / INBOX SECTION */}
@@ -552,103 +866,7 @@ export default function SuperAdminDashboard() {
                 </CardContent>
             </Card>
 
-            {/* ── FEATURE FLAGS ── */}
-            <Card className="border shadow-2xl rounded-[2.5rem] overflow-hidden border-slate-100 bg-white">
-                <CardHeader className="pb-2 p-8">
-                    <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-amber-500" /> Feature Flags
-                    </CardTitle>
-                    <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                        Washa/Zima vipengele bila kudeployi upya
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="p-8 pt-0 space-y-4">
-                    {/* Removed Consultant pricing toggle from UI */}
 
-                    {/* Selcom Payments Flag */}
-                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <div className="space-y-0.5">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-700">
-                                Washa Malipo ya Selcom
-                            </p>
-                            <p className="text-[9px] font-bold text-slate-400">
-                                M-Pesa, Tigo, Airtel & Cards (Automated)
-                            </p>
-                        </div>
-                        <button
-                            onClick={async () => {
-                                setFlagLoading(true)
-                                vibe()
-                                try {
-                                    const supabase = getSupabaseBrowserClient()
-                                    const newVal = !selcomFlagEnabled
-                                    await supabase.from('system_flags')
-                                        .upsert({ flag_name: 'enable_selcom', is_enabled: newVal, updated_at: new Date().toISOString() }, { onConflict: 'flag_name' })
-                                    setSelcomFlagEnabled(newVal)
-                                    toast({ title: newVal ? "✅ Selcom Imewashwa" : "⛔ Selcom Imezimwa", description: `Wateja ${newVal ? 'wanaweza' : 'hawawezi'} kulipa kwa Selcom sasa.` })
-                                } catch (e: any) {
-                                    toast({ title: "Kosa", description: e.message, variant: "destructive" })
-                                } finally {
-                                    setFlagLoading(false)
-                                }
-                            }}
-                            disabled={flagLoading}
-                            className={`relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none ${selcomFlagEnabled ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-slate-300'}`}
-                        >
-                            <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300 ${selcomFlagEnabled ? 'left-8' : 'left-1'}`} />
-                        </button>
-                    </div>
-
-                    {/* WhatsApp Business API Flag */}
-                    <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <div className="space-y-0.5">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-700">
-                                WhatsApp Automated API
-                            </p>
-                            <p className="text-[9px] font-bold text-slate-400">
-                                Tuma Invoice & Alerts kiotomatiki
-                            </p>
-                        </div>
-                        <button
-                            onClick={async () => {
-                                setFlagLoading(true)
-                                vibe()
-                                try {
-                                    const supabase = getSupabaseBrowserClient()
-                                    const newVal = !whatsappFlagEnabled
-                                    await supabase.from('system_flags')
-                                        .upsert({ flag_name: 'enable_whatsapp_api', is_enabled: newVal, updated_at: new Date().toISOString() }, { onConflict: 'flag_name' })
-                                    setWhatsappFlagEnabled(newVal)
-                                    toast({ title: newVal ? "✅ WhatsApp API Imewashwa" : "⛔ WhatsApp API Imezimwa", description: `Ujumbe ${newVal ? 'utatumwa' : 'hautatumwa'} kiotomatiki sasa.` })
-                                } catch (e: any) {
-                                    toast({ title: "Kosa", description: e.message, variant: "destructive" })
-                                } finally {
-                                    setFlagLoading(false)
-                                }
-                            }}
-                            disabled={flagLoading}
-                            className={`relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none ${whatsappFlagEnabled ? 'bg-emerald-600 shadow-lg shadow-emerald-500/30' : 'bg-slate-300'}`}
-                        >
-                            <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300 ${whatsappFlagEnabled ? 'left-8' : 'left-1'}`} />
-                        </button>
-                    </div>
-
-                    <div className="flex items-center gap-2 mt-2">
-                        <div className={`w-2 h-2 rounded-full ${consultantFlagEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
-                        <span className={`text-[9px] font-black uppercase tracking-widest ${consultantFlagEnabled ? 'text-emerald-600' : 'text-slate-400'}`}>
-                            {consultantFlagEnabled ? 'Mshauri: ON' : 'Mshauri: OFF'}
-                        </span>
-                        <span className="mx-1 text-slate-300">|</span>
-                        <span className={`text-[9px] font-black uppercase tracking-widest ${selcomFlagEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
-                            Selcom: {selcomFlagEnabled ? 'LIVE' : 'OFF'}
-                        </span>
-                        <span className="mx-1 text-slate-300">|</span>
-                        <span className={`text-[9px] font-black uppercase tracking-widest ${whatsappFlagEnabled ? 'text-emerald-600' : 'text-slate-400'}`}>
-                            WhatsApp: {whatsappFlagEnabled ? 'AUTO' : 'OFF'}
-                        </span>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
       </div>
 

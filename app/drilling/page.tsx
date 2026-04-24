@@ -10,6 +10,7 @@ import {
 import Link from "next/link"
 import { DrillingTable } from "@/components/drilling/drilling-table"
 import { ProfessionalReportButton } from "@/components/ui/professional-report-button"
+import { ProfessionalReportDropdown } from "@/components/ui/professional-report-dropdown"
 import { useTranslation } from "@/components/language-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { ModuleHelpNotebook } from "@/components/module-help-notebook"
@@ -111,146 +112,197 @@ export default function DrillingPage() {
   )
 
   return (
-    <div className="flex-1 overflow-auto p-8 space-y-10 bg-slate-50/30 dark:bg-slate-950/30 pb-20">
+    <div className="flex-1 overflow-auto bg-[#fafafa] dark:bg-slate-950 pb-20 p-8 space-y-10">
       
-      {/* ── Header ── */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
-          <div className="space-y-1">
-              <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                      <Drill className="w-6 h-6" />
-                  </div>
-                  Drilling Portfolio
-              </h1>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Exploration analytics & field execution control</p>
+      {/* ── Header Area ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-900 md:p-6 p-4 rounded-[2.5rem] border shadow-sm relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+           <Drill className="w-32 h-32 text-blue-500" />
+        </div>
+        
+        <div className="flex items-center gap-5 relative z-10">
+          <div className="w-14 h-14 rounded-3xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-500/20">
+            <Drill className="w-7 h-7" />
           </div>
-          
-          <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-              <SystemPeriodFilter currentPeriod={period} onPeriodChange={setPeriod} />
-              <ProfessionalReportButton 
-                  data={filteredOps} 
-                  filename="DRILLING_EXECUTIVE_REPORT" 
-                  title="Drilling Ops Executive Report" 
-                  moduleColor="blue"
-                  activePeriod={period}
-                  charts={chartConfigs}
-                  kpis={[
-                    { label: "TOTAL METERS", value: totalDepth.toFixed(1) },
-                    { label: "AVG PENETRATION", value: avgPenetrationRate.toFixed(2) },
-                    { label: "TOTAL FUEL", value: totalFuel.toFixed(1) }
-                  ]}
-              />
-              <ModuleHelpNotebook moduleTitle="Drilling" />
-              <Link href="/drilling/new">
-                <Button className="h-12 px-6 rounded-2xl bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-widest shadow-xl transition-all">
-                    <Plus className="w-4 h-4 mr-2" /> Log Drill
-                </Button>
-              </Link>
+          <div>
+             <h2 className="text-2xl font-black tracking-tighter uppercase italic text-slate-900 dark:text-white">Drilling Portfolio</h2>
+             <div className="flex items-center gap-3 mt-1">
+                <Badge className="bg-blue-500/10 text-blue-600 border-0 font-black text-[9px] uppercase tracking-widest">{totalOps} Active</Badge>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">• Exploration & Field Execution</span>
+             </div>
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 relative z-10">
+            <SystemPeriodFilter currentPeriod={period} onPeriodChange={setPeriod} />
+            
+            <ProfessionalReportDropdown 
+                configs={{
+                    budget: {
+                        data: filteredOps,
+                        filename: "DRILLING_BUDGET_REPORT",
+                        moduleColor: "blue",
+                        activePeriod: period,
+                        kpis: [
+                            { label: "FISCAL TARGET", value: "TZS " + totalBudget.toLocaleString() },
+                            { label: "ACTUAL SPEND", value: "TZS " + totalCost.toLocaleString() },
+                            { label: "VARIANCE", value: totalBudget > 0 ? (((totalCost - totalBudget) / totalBudget) * 100).toFixed(1) + "%" : "0%" }
+                        ]
+                    },
+                    execution: {
+                        data: filteredOps,
+                        filename: "DRILLING_EXECUTION_LOG",
+                        moduleColor: "blue",
+                        activePeriod: period,
+                        charts: chartConfigs,
+                        kpis: [
+                            { label: "TOTAL METERS", value: totalDepth.toFixed(1) + " m" },
+                            { label: "AVG PENETRATION", value: avgPenetrationRate.toFixed(2) + " m/min" },
+                            { label: "SESSIONS", value: totalOps }
+                        ]
+                    },
+                    client: {
+                        data: filteredOps,
+                        filename: "DRILLING_CLIENT_SUMMARY",
+                        moduleColor: "slate",
+                        activePeriod: period,
+                        kpis: [
+                            { label: "ASSET STATUS", value: "OPERATIONAL" },
+                            { label: "METERS DRIVEN", value: totalDepth.toFixed(1) + " m" },
+                            { label: "COMPLIANCE", value: "100%" }
+                        ]
+                    }
+                }}
+            />
+            <ModuleHelpNotebook moduleTitle="Drilling" />
+            <Link href="/drilling/new">
+              <Button className="h-14 px-8 rounded-2xl bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-[0.2em] shadow-2xl transition-all active:scale-95">
+                  <Plus className="w-4 h-4 mr-2" /> Log Drill
+              </Button>
+            </Link>
+        </div>
       </div>
 
       {/* ── KPI Grid ── */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-           <Card className="border-0 shadow-lg bg-white overflow-hidden relative group transition-all hover:scale-[1.02]">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-blue-50 rounded-2xl text-blue-600">
-                  <ArrowDownToLine className="w-6 h-6" />
-                </div>
-                <Badge className="bg-blue-100 text-blue-700 border-0 font-black text-[9px] uppercase tracking-widest">Depth</Badge>
+           <Card className="border-0 shadow-xl bg-slate-900 text-white rounded-[2.5rem] overflow-hidden relative group hover:scale-[1.02] transition-all">
+              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                <ArrowDownToLine className="w-16 h-16" />
               </div>
-              <h3 className="text-4xl font-black text-slate-800">{totalDepth.toLocaleString(undefined, { maximumFractionDigits: 1 })}</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Calculated Meters Drilled</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white overflow-hidden relative group transition-all hover:scale-[1.02]">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-purple-50 rounded-2xl text-purple-600">
-                  <Gauge className="w-6 h-6" />
+              <CardHeader className="pb-1">
+                <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-blue-400">Total Depth</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                   <h3 className="text-5xl font-black tracking-tighter text-white font-mono">{totalDepth.toLocaleString(undefined, { maximumFractionDigits: 1 })}</h3>
+                   <span className="text-xl text-blue-500">m</span>
                 </div>
-                <Badge className="bg-purple-100 text-purple-700 border-0 font-black text-[9px] uppercase tracking-widest">{avgPenetrationRate.toFixed(2)} m/min</Badge>
-              </div>
-              <h3 className="text-4xl font-black text-slate-800">{totalFuel.toLocaleString(undefined, { maximumFractionDigits: 1 })}</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Fuel Consumption (L)</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white overflow-hidden relative group transition-all hover:scale-[1.02]">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600">
-                  <Activity className="w-6 h-6" />
+                <div className="h-1.5 w-full bg-white/10 rounded-full mt-4 overflow-hidden">
+                   <div className="h-full bg-blue-500" style={{ width: `100%` }} />
                 </div>
-                <Badge className="bg-emerald-100 text-emerald-700 border-0 font-black text-[9px] uppercase tracking-widest">Activity</Badge>
-              </div>
-              <h3 className="text-4xl font-black text-slate-800">{totalOps}</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Total Logged Sessions</p>
-            </CardContent>
-          </Card>
+              </CardContent>
+           </Card>
 
-          <Card className={`col-span-1 xl:col-span-2 border-0 shadow-xl overflow-hidden relative text-white transition-all hover:scale-[1.02] ${overBudgetTotal > 0 ? "bg-red-600" : "bg-slate-900"}`}>
-            <CardContent className="p-8">
-               <div className="flex justify-between items-center mb-6">
-                  <div className="p-3 bg-white/10 rounded-2xl">
-                    <Landmark className="w-6 h-6" />
-                  </div>
-                  {overBudgetTotal > 0 && <Badge className="bg-white/20 text-white border-0 font-black text-[9px] uppercase tracking-widest flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> {overBudgetTotal} Over Budget</Badge>}
-               </div>
-               <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-3xl font-black">TZS {(totalCost / 1000000).toFixed(2)}M</h3>
-                    <p className="text-[10px] font-black opacity-60 uppercase tracking-widest mt-2">Aggregated Spend</p>
-                  </div>
-                  <div className="text-right">
-                    <h3 className="text-3xl font-black">TZS {(totalBudget / 1000000).toFixed(2)}M</h3>
-                    <p className="text-[10px] font-black opacity-60 uppercase tracking-widest mt-2">Planned Threshold</p>
-                  </div>
-               </div>
-            </CardContent>
-          </Card>
+           <Card className="border-0 shadow-xl bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden relative group hover:scale-[1.02] transition-all">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-slate-400">Total Fuel Consumption</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                   <h3 className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white font-mono">{totalFuel.toLocaleString(undefined, { maximumFractionDigits: 1 })}</h3>
+                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Liters</span>
+                </div>
+                <p className="text-[9px] font-bold text-blue-500 uppercase mt-2">AVG {avgPenetrationRate.toFixed(2)} m/min penetration</p>
+              </CardContent>
+           </Card>
+
+           <Card className="border-0 shadow-xl bg-blue-600 text-white rounded-[2.5rem] overflow-hidden relative group hover:scale-[1.02] transition-all">
+              <div className="absolute top-0 right-0 p-6 opacity-10">
+                <Activity className="w-16 h-16" />
+              </div>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-blue-200">Total Sessions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                   <h3 className="text-5xl font-black tracking-tighter text-white font-mono">{totalOps}</h3>
+                   <span className="text-xs font-black text-blue-200 uppercase tracking-widest">Logs</span>
+                </div>
+              </CardContent>
+           </Card>
+
+           <Card className={`col-span-1 xl:col-span-2 border-0 shadow-xl rounded-[2.5rem] overflow-hidden transition-all hover:scale-[1.02] ${overBudgetTotal > 0 ? 'bg-rose-600 text-white' : 'bg-slate-950 text-white'}`}>
+              <CardHeader className="pb-1">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-slate-400">Budget Pulse</CardTitle>
+                  <Landmark className="w-4 h-4 text-emerald-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                   <div>
+                      <div className="text-[9px] font-bold uppercase tracking-widest opacity-60">Actual Spend (TZS)</div>
+                      <h3 className="text-3xl font-black tracking-tighter">{(totalCost/1000000).toFixed(2)}M</h3>
+                   </div>
+                   <div className="pt-2 border-t border-white/10">
+                      <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest">
+                         <span className="opacity-60">Target M</span>
+                         <span className={overBudgetTotal > 0 ? "text-white" : "text-emerald-400"}>
+                            {(totalBudget/1000000).toFixed(2)}M
+                         </span>
+                      </div>
+                   </div>
+                </div>
+              </CardContent>
+           </Card>
       </div>
 
       {/* ── Visual Analytics ── */}
       <div className="grid gap-8 lg:grid-cols-2">
-           <Card className="border-0 shadow-2xl rounded-[3rem] bg-white dark:bg-slate-900 p-8">
-               <h3 className="text-xl font-black uppercase italic tracking-tighter mb-6 flex items-center gap-2">
-                   <Activity className="w-5 h-5 text-blue-600" />
-                   Penetration Velocity (m)
-               </h3>
-               <div className="h-[300px] w-full">
+           <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-8 border shadow-sm relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-8 opacity-5">
+                   <Activity className="w-32 h-32" />
+               </div>
+               <div className="mb-8 relative z-10">
+                   <h3 className="text-xl font-black tracking-tighter uppercase italic text-slate-900 dark:text-white">Penetration Velocity</h3>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actual driven meters over time</p>
+               </div>
+               <div className="h-[300px] w-full relative z-10">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                            <XAxis dataKey="date" fontSize={10} fontWeight={800} axisLine={false} tickLine={false} />
-                            <YAxis fontSize={10} fontWeight={800} axisLine={false} tickLine={false} />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.05} stroke="#3b82f6" />
+                            <XAxis dataKey="date" fontSize={10} fontWeight={900} axisLine={false} tickLine={false} />
+                            <YAxis fontSize={10} fontWeight={900} axisLine={false} tickLine={false} />
                             <Tooltip 
-                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
+                                contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.2)', padding: '20px' }}
+                                cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
                             />
-                            <Bar dataKey="actual" fill="#2563eb" radius={[6, 6, 0, 0]} name="Actual (m)" />
+                            <Bar dataKey="actual" fill="#3b82f6" radius={[12, 12, 4, 4]} barSize={40} name="Actual (m)" />
                         </BarChart>
                     </ResponsiveContainer>
                </div>
-           </Card>
+           </div>
 
-           <Card className="border-0 shadow-2xl rounded-[3rem] bg-white dark:bg-slate-900 p-8">
-               <h3 className="text-xl font-black uppercase italic tracking-tighter mb-6 flex items-center gap-2">
-                   <Gauge className="w-5 h-5 text-purple-600" />
-                   Efficiency Delta
-               </h3>
-               <div className="h-[300px] w-full">
+           <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-8 border shadow-sm relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-8 opacity-5">
+                   <Gauge className="w-32 h-32" />
+               </div>
+               <div className="mb-8 relative z-10">
+                   <h3 className="text-xl font-black tracking-tighter uppercase italic text-slate-900 dark:text-white">Efficiency Delta</h3>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Performance trend analysis</p>
+               </div>
+               <div className="h-[300px] w-full relative z-10">
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                            <XAxis dataKey="date" fontSize={10} fontWeight={800} axisLine={false} tickLine={false} />
-                            <YAxis fontSize={10} fontWeight={800} axisLine={false} tickLine={false} />
-                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none' }} />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.05} stroke="#8b5cf6" />
+                            <XAxis dataKey="date" fontSize={10} fontWeight={900} axisLine={false} tickLine={false} />
+                            <YAxis fontSize={10} fontWeight={900} axisLine={false} tickLine={false} />
+                            <Tooltip contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.2)' }} />
                             <Line type="monotone" dataKey="actual" stroke="#8b5cf6" strokeWidth={5} dot={{ r: 5, fill: '#fff', strokeWidth: 3 }} activeDot={{ r: 8 }} />
                         </LineChart>
                     </ResponsiveContainer>
                </div>
-           </Card>
+           </div>
       </div>
 
       {/* ── Table ── */}

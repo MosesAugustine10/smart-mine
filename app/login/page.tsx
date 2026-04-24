@@ -1,91 +1,271 @@
 "use client"
 
-import React from "react"
+import type React from "react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Mountain, HardHat, Building2, ShieldCheck, ArrowRight } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2, Mail, Lock, Eye, EyeOff, ShieldCheck, Globe } from "lucide-react"
+import { useTranslation } from "@/components/language-context"
+import { LoginCarousel } from "@/components/login-carousel"
+import { ThemeToggle } from "@/components/theme-toggle"
 
-export default function UnifiedLoginPage() {
-    const vibe = () => { if (typeof navigator !== 'undefined') navigator.vibrate?.(50) }
+export default function LoginPage() {
+  const { t, language, setLanguage } = useTranslation()
+  const router = useRouter()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [step, setStep] = useState<"credentials" | "totp">("credentials")
+  const [totpCode, setTotpCode] = useState("")
+  const [tempAuthData, setTempAuthData] = useState<any>(null)
+  const [tempProfileData, setTempProfileData] = useState<any>(null)
 
-    return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 transition-colors duration-500">
-            {/* Ambient Background Glows */}
-            <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-amber-500/10 blur-[120px] rounded-full" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
-            </div>
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
 
-            <div className="relative z-10 w-full max-w-4xl space-y-12">
-                {/* Brand */}
-                <div className="text-center space-y-4">
-                    <div className="w-20 h-20 mx-auto rounded-[2rem] bg-amber-500 flex items-center justify-center shadow-2xl shadow-amber-500/30">
-                        <Mountain className="w-10 h-10 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">
-                            Karibu <span className="text-amber-500">SMART MINE</span>
-                        </h1>
-                        <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.4em] mt-2">
-                            Chagua jinsi unavyotaka kuingia
-                        </p>
-                    </div>
-                </div>
+    try {
+      const supabase = getSupabaseBrowserClient()
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-                {/* Role Cards */}
-                <div className="grid md:grid-cols-2 gap-8">
-                    {/* CARD 1: Small Scale */}
-                    <Link href="/login/small" onClick={vibe} className="group flex flex-col bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[3rem] p-10 hover:border-amber-500/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-500 transform hover:-translate-y-2">
-                        <div className="w-16 h-16 rounded-[1.5rem] bg-amber-500 flex items-center justify-center shadow-xl shadow-amber-500/20 mb-8 group-hover:scale-110 transition-transform">
-                            <Pickaxe className="w-8 h-8 text-white" />
-                        </div>
-                        <div className="space-y-4 flex-1">
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic">
-                                MCHIMBAJI MDOGO / <br />MSIMAMIZI WA SITE
-                            </h3>
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
-                                Kwa wachimbaji binafsi na wasimamizi wa mashimo. Ingia kwa namba yako ya simu na PIN.
-                            </p>
-                        </div>
-                        <Button className="w-full h-14 mt-10 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-amber-500/20">
-                            INGIA KAMA MCHIMBAJI MDOGO <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                    </Link>
+      if (error) throw error
 
-                    {/* CARD 2: Medium Scale */}
-                    <Link href="/login/medium" onClick={vibe} className="group flex flex-col bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[3rem] p-10 hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 transform hover:-translate-y-2">
-                        <div className="w-16 h-16 rounded-[1.5rem] bg-blue-600 flex items-center justify-center shadow-xl shadow-blue-500/20 mb-8 group-hover:scale-110 transition-transform">
-                            <Building2 className="w-8 h-8 text-white" />
-                        </div>
-                        <div className="space-y-4 flex-1">
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight italic">
-                                MGODI WA KATI / <br />MKANDARASI / MSHAURI
-                            </h3>
-                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
-                                Kwa makampuni, wakandarasi, na wataalamu wa madini. Ingia kwa email na password.
-                            </p>
-                        </div>
-                        <Button className="w-full h-14 mt-10 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-blue-500/20">
-                            INGIA KAMA MGODI WA KATI <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                    </Link>
-                </div>
+      let role = "Guest"
+      let profileData: any = null
+      try {
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("role, totp_secret, is_temp_password, temp_password_expires_at")
+          .eq("id", data.user.id)
+          .single()
+        if (profile) {
+          role = profile.role
+          profileData = profile
+        }
+      } catch (err) {
+        console.warn("Profile fetch failed")
+      }
 
-                {/* Footer Security Badge */}
-                <div className="flex flex-col items-center gap-4 py-8">
-                    <div className="flex items-center gap-2 px-6 py-2 bg-slate-900 dark:bg-white/5 rounded-full border border-white/10">
-                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                        <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">Mfumo Umelindwa kwa TOTP & Encryption</span>
-                    </div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 SMART MINE TANZANIA</p>
-                </div>
-            </div>
+      if (profileData?.is_temp_password) {
+        const expires = profileData.temp_password_expires_at ? new Date(profileData.temp_password_expires_at) : null
+        if (!expires || expires > new Date()) {
+          window.location.href = "/auth/set-password"
+          return
+        } else {
+          setError("Your temporary password has expired. Please contact your administrator.")
+          await supabase.auth.signOut()
+          setLoading(false)
+          return
+        }
+      }
+
+      const requiresTotp = ["SUPER_ADMIN", "admin", "accountant"].includes(role)
+      const deviceId = localStorage.getItem("device_id")
+      const isRecognizedDevice = deviceId && deviceId === data.user.id
+
+      if (requiresTotp && !isRecognizedDevice) {
+        setTempAuthData(data)
+        setTempProfileData(profileData)
+        setStep("totp")
+        setLoading(false)
+        return
+      }
+
+      completeLogin(data, role)
+    } catch (err: any) {
+      setError(err.message)
+      setLoading(false)
+    }
+  }
+
+  const handleTotpVerify = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      if (totpCode.length !== 6) throw new Error("Invalid TOTP code length")
+      localStorage.setItem("device_id", tempAuthData.user.id)
+      completeLogin(tempAuthData, tempProfileData?.role || "Guest")
+    } catch (err: any) {
+      setError(err.message)
+      setLoading(false)
+    }
+  }
+
+  const completeLogin = (data: any, role: string) => {
+    const syncData = {
+      role: role,
+      cid: (data.user?.user_metadata as any)?.company_id || null,
+      mods: role === "SUPER_ADMIN" ? ["all"] : [],
+      ts: Date.now()
+    }
+    document.cookie = `msm_user_role=${encodeURIComponent(JSON.stringify(syncData))}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`
+
+    if (role === "SUPER_ADMIN") {
+      window.location.href = "/super-admin"
+    } else {
+      window.location.href = "/"
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex bg-white dark:bg-stone-950">
+      
+      {/* Left Panel - Carousel (60%) */}
+      <div className="hidden lg:block lg:w-[60%] h-screen relative sticky top-0">
+        <LoginCarousel />
+      </div>
+
+      {/* Right Panel - Login Form (40% or 100% on mobile) */}
+      <div className="w-full lg:w-[40%] flex flex-col min-h-screen">
+        
+        {/* Header Actions */}
+        <div className="p-6 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setLanguage(language === 'en' ? 'sw' : 'en')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-stone-200 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-900 transition-colors"
+            >
+              <Globe className="w-4 h-4 text-stone-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-400">
+                {language === 'en' ? 'Kiswahili' : 'English'}
+              </span>
+            </button>
+          </div>
+          <ThemeToggle />
         </div>
-    )
-}
 
-const Pickaxe = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <path d="M7 22l3.35-3.35" /><path d="M10.35 18.65L14 15l-4-4-3.65 3.65" /><path d="M14 15l7.65-7.65" /><path d="M21 9a2.5 2.5 0 0 0 -2-2L14 3a2.5 2.5 0 0 0 -2 2l4 4a2.5 2.5 0 0 0 2 2z" /><path d="M11 7l3 3" />
-    </svg>
-)
+        <div className="flex-1 flex flex-col items-center justify-center p-8 md:p-16 max-w-[550px] mx-auto w-full">
+          
+          {/* Branding */}
+          <div className="mb-12 text-center lg:text-left w-full">
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-amber-500 mb-2">Smart Mine Enterprise</p>
+            <h1 className="text-4xl font-black text-stone-900 dark:text-white uppercase tracking-tighter italic">
+              {t('welcomeBack')}
+            </h1>
+            <p className="text-stone-500 dark:text-stone-400 font-medium text-sm mt-2">
+              {t('signInSubtitle')}
+            </p>
+          </div>
+
+          <div className="w-full space-y-8">
+            {error && (
+              <Alert variant="destructive" className="rounded-2xl border-red-200 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 py-4">
+                <AlertDescription className="text-xs font-bold">{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <form onSubmit={step === "credentials" ? handleLogin : handleTotpVerify} className="space-y-6">
+              {step === "credentials" ? (
+                <>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-stone-500 ml-1">
+                      {t('emailAddress')}
+                    </Label>
+                    <div className="relative group">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
+                      <Input
+                        type="email"
+                        placeholder="name@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="h-14 pl-12 rounded-2xl border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/50 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between ml-1">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-stone-500">
+                        {t('password')}
+                      </Label>
+                      <Link 
+                        href="/login/forgot-password" 
+                        className="text-[10px] font-black uppercase tracking-widest text-amber-600 hover:text-amber-700 transition-colors"
+                      >
+                        {t('forgotPassword')}
+                      </Link>
+                    </div>
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 group-focus-within:text-amber-500 transition-colors" />
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder={t('enterPassword')}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="h-14 pl-12 pr-12 rounded-2xl border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/50 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-bold"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4 animate-in slide-in-from-right duration-300">
+                  <div className="flex flex-col items-center gap-4 mb-6">
+                    <div className="w-16 h-16 rounded-[2rem] bg-amber-500/10 flex items-center justify-center">
+                      <ShieldCheck className="w-8 h-8 text-amber-500" />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-500 text-center">
+                      Two-Factor Authentication Required
+                    </p>
+                  </div>
+                  <Input
+                    type="text"
+                    placeholder="000000"
+                    maxLength={6}
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                    required
+                    className="h-20 rounded-[2rem] border-amber-200 bg-amber-50 dark:bg-amber-950/20 focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-center text-4xl font-black tracking-[0.5em] text-amber-600"
+                  />
+                  <p className="text-[10px] text-stone-400 text-center font-bold">
+                    Enter the code from your authenticator app
+                  </p>
+                </div>
+              )}
+
+              <Button 
+                type="submit" 
+                disabled={loading}
+                className="w-full h-14 bg-stone-900 dark:bg-amber-500 text-white dark:text-stone-950 hover:bg-stone-800 dark:hover:bg-amber-400 font-black text-sm uppercase tracking-widest rounded-2xl shadow-xl shadow-stone-900/10 transition-all active:scale-[0.98]"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  step === "credentials" ? t('signIn') : "Verify & Continue"
+                )}
+              </Button>
+            </form>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-8 mt-auto border-t border-stone-100 dark:border-stone-900">
+          <p className="text-center text-[10px] font-black text-stone-400 uppercase tracking-[0.4em]">
+            © 2026 SMART MINE TANZANIA | SECURE NODE ALPHA
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}

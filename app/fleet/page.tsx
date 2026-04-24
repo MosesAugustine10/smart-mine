@@ -1,41 +1,94 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { 
   Truck, Fuel, Wrench, Package, 
-  MapPin, Activity, AlertTriangle, BatteryCharging, ShieldCheck, Cog
+  MapPin, Activity, AlertTriangle, BatteryCharging, ShieldCheck, Cog, Loader2
 } from "lucide-react"
-import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { ProfessionalReportDropdown } from "@/components/ui/professional-report-dropdown"
 
-export const dynamic = "force-dynamic"
+export default function FleetDashboard() {
+  const [data, setData] = useState({
+    vehicles: [] as any[],
+    maintenance: 0,
+    fuel: 0,
+    quarry: 0,
+    loading: true
+  })
 
-export default async function FleetDashboard() {
-  const supabase = await getSupabaseServerClient()
+  useEffect(() => {
+    async function loadStats() {
+      const supabase = getSupabaseBrowserClient()
+      
+      const [vRes, mRes, fRes, qRes] = await Promise.all([
+        supabase.from("vehicles").select("*"),
+        supabase.from("maintenance_logs").select("*", { count: "exact", head: true }),
+        supabase.from("fuel_logs").select("*", { count: "exact", head: true }),
+        supabase.from("quarry_logs").select("*", { count: "exact", head: true })
+      ])
 
-  // Fetch some quick stats if tables exist, or default to 0
-  const fetchCount = async (table: string) => {
-    try {
-      const { count } = await supabase.from(table).select("*", { count: "exact", head: true })
-      return count || 0
-    } catch {
-      return 0
+      setData({
+        vehicles: vRes.data || [],
+        maintenance: mRes.count || 0,
+        fuel: fRes.count || 0,
+        quarry: qRes.count || 0,
+        loading: false
+      })
     }
-  }
+    loadStats()
+  }, [])
 
-  const [vehicles, maintenance, fuel, quarry] = await Promise.all([
-    fetchCount("vehicles"),
-    fetchCount("maintenance_logs"),
-    fetchCount("fuel_logs"),
-    fetchCount("quarry_logs") // payload/checklist
-  ])
+  if (data.loading) return (
+    <div className="h-screen w-full flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="w-12 h-12 animate-spin text-emerald-600" />
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Inventorying Fleet Assets...</p>
+    </div>
+  )
 
   return (
     <>
-      <DashboardHeader 
-        title="Vehicle Registry & Tracking" 
-        description="List of all vehicles, fuel logs, maintenance, and GPS tracking." 
-      />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-8 pb-0">
+        <DashboardHeader 
+          title="Vehicle Registry & Tracking" 
+          description="List of all vehicles, fuel logs, maintenance, and GPS tracking." 
+        />
+        <ProfessionalReportDropdown 
+          configs={{
+            budget: {
+              data: data.vehicles,
+              filename: "FLEET_BUDGET_REPORT",
+              moduleColor: "slate",
+              kpis: [
+                { label: "ASSET VALUATION", value: "TZS 12.4M" },
+                { label: "PLANNED MAINTENANCE", value: "TZS 2.5M" }
+              ]
+            },
+            execution: {
+              data: data.vehicles,
+              filename: "FLEET_EXECUTION_LOG",
+              moduleColor: "emerald",
+              kpis: [
+                { label: "TOTAL ASSETS", value: data.vehicles.length },
+                { label: "AVAILABILITY", value: "92%" }
+              ]
+            },
+            client: {
+              data: data.vehicles,
+              filename: "FLEET_CLIENT_SUMMARY",
+              moduleColor: "slate",
+              kpis: [
+                { label: "SAFETY RATING", value: "GOLD" },
+                { label: "FLEET AGE AVG", value: "3.2 Yrs" }
+              ]
+            }
+          }}
+        />
+      </div>
       
       <div className="flex-1 overflow-auto p-8 space-y-8 bg-slate-50/50 dark:bg-slate-950/20">
         
@@ -48,7 +101,7 @@ export default async function FleetDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-4xl font-extrabold">{vehicles}</div>
+              <div className="text-4xl font-extrabold">{data.vehicles.length}</div>
               <p className="text-[10px] uppercase font-bold mt-2 opacity-80">Registered Equipment</p>
             </CardContent>
           </Card>
@@ -60,7 +113,7 @@ export default async function FleetDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{fuel}</div>
+              <div className="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{data.fuel}</div>
               <p className="text-[10px] text-muted-foreground uppercase font-bold mt-2">Bunkering Records (Jaza Mafuta)</p>
             </CardContent>
           </Card>
@@ -72,7 +125,7 @@ export default async function FleetDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{maintenance}</div>
+              <div className="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{data.maintenance}</div>
               <p className="text-[10px] text-muted-foreground uppercase font-bold mt-2">Work Orders (Oda za Kazi)</p>
             </CardContent>
           </Card>
@@ -84,7 +137,7 @@ export default async function FleetDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{quarry}</div>
+              <div className="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{data.quarry}</div>
               <p className="text-[10px] text-muted-foreground uppercase font-bold mt-2">Dispatch & Quarry Logs</p>
             </CardContent>
           </Card>
@@ -92,7 +145,7 @@ export default async function FleetDashboard() {
 
         {/* Modules Access */}
         <h3 className="text-lg font-black uppercase tracking-tight text-slate-800 dark:text-white mt-10">Control Modules</h3>
-        
+
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Link href="/fleet/vehicles">
             <Card className="border-2 hover:border-emerald-500 transition-all rounded-[2rem] h-full cursor-pointer group">

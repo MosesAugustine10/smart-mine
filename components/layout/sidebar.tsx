@@ -34,12 +34,8 @@ const NAV_CONFIG: NavEntry[] = [
     items: [
       { name: "Blasting",          href: "/blasting",  icon: Zap,     code: "blasting" },
       { name: "Drilling",          href: "/drilling",  icon: Pickaxe, code: "drilling" },
-      {
-        name: "Diamond Drilling",  href: "/diamond-drilling", icon: Diamond, code: "diamond-drilling",
-        subItems: [
-          { name: "Advanced Assay", href: "/diamond-drilling/assay", icon: FlaskConical, code: "diamond-drilling" },
-        ],
-      },
+      { name: "Diamond Drilling",  href: "/diamond-drilling", icon: Diamond, code: "diamond-drilling" },
+
     ],
   },
 
@@ -185,7 +181,7 @@ export function Sidebar() {
                               {child.name}
                             </Link>
 
-                            {/* Sub-items (Advanced Assay under Diamond Drilling) */}
+
                             {child.subItems && highlight && (
                               <div className="mt-0.5 ml-3 pl-2 border-l border-amber-200/60 dark:border-amber-700/40 flex flex-col gap-0.5">
                                 {child.subItems.map((sub) => {

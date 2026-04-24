@@ -8,6 +8,7 @@ import { OfflineStatusBanner } from "@/components/offline-status-banner"
 import { NotificationProvider } from "@/components/notification-provider"
 import { AuthProvider } from "@/components/auth-provider"
 import { LayoutWrapper } from "@/components/layout-wrapper"
+import { ServiceWorkerRegistrar } from "@/components/service-worker-registrar"
 import { cn } from "@/lib/utils"
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
@@ -15,6 +16,7 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
 export const metadata: Metadata = {
   title: "SMART MINE",
   description: "Enterprise Mining Operations Platform",
+  manifest: "/manifest.json",
 }
 
 export default function RootLayout({
@@ -35,14 +37,15 @@ export default function RootLayout({
             <AuthProvider>
               <OfflineProvider>
                 <NotificationProvider>
+                  <ServiceWorkerRegistrar />
                   <div className="flex bg-background h-screen w-[100vw] font-sans overflow-hidden">
                     <LayoutWrapper>
                       {children}
                     </LayoutWrapper>
                   </div>
                 <OfflineStatusBanner />
-              </NotificationProvider>
-            </OfflineProvider>
+                </NotificationProvider>
+              </OfflineProvider>
             </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>

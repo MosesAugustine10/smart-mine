@@ -54,7 +54,7 @@ const AuthContext = createContext<AuthContextValue>({
 })
 
 // Routes that should never trigger auth network calls
-const PUBLIC_ROUTES = ['/', '/auth', '/chimbo', '/landing', '/gate', '/login', '/small', '/medium']
+const PUBLIC_ROUTES = ['/', '/auth', '/login', '/auth/set-password']
 function isPublicPath(pathname: string | null) {
   if (!pathname) return false
   return PUBLIC_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'))
@@ -211,10 +211,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [isPublic, profile])
 
   const signOut = async () => {
+    document.cookie = 'msm_user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
     document.cookie = 'demo_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
     const supabase = getSupabaseBrowserClient()
     await supabase.auth.signOut()
-    window.location.href = '/auth/login'
+    window.location.href = '/login'
   }
 
     const hasAccess = (modulePath: string) => {
@@ -251,23 +252,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // ─── RBAC Role Matrix ───────────────────────────────────────────────────
+    // ─── RBAC Role Matrix (matches lib/rbac.ts MODULE_ACCESS) ────────────────
     const ROUTE_ACCESS: Record<string, string[]> = {
-      'blasting':          ['Investor', 'Manager', 'Geologist', 'Blaster', 'Supervisor'],
-      'drilling':          ['Investor', 'Manager', 'Geologist', 'Driller', 'Supervisor'],
-      'diamond-drilling':  ['Investor', 'Manager', 'Geologist', 'Diamond Driller', 'Supervisor'],
-      'material-handling': ['Investor', 'Manager', 'Supervisor', 'Driver/Operator'],
-      'geophysics':        ['Investor', 'Manager', 'Geologist'],
-      'fleet':             ['Investor', 'Manager', 'Driller', 'Diamond Driller', 'Supervisor', 'Driver/Operator'],
-      'inventory':         ['Investor', 'Manager', 'Geologist', 'Blaster', 'Driller', 'Diamond Driller', 'Stock Keeper', 'Supervisor', 'Driver/Operator'],
-      'finance':           ['Investor', 'Manager', 'Accountant'],
-      'invoices':          ['Investor', 'Manager', 'Accountant'],
-      'billing':           ['Investor', 'Manager', 'Accountant'],
-      'reports':           ['Investor', 'Manager', 'Accountant', 'Geologist', 'Stock Keeper', 'Supervisor'],
-      'safety':            ['Investor', 'Manager', 'Geologist', 'Blaster', 'Driller', 'Diamond Driller', 'Supervisor'],
-      'admin':             ['Investor', 'Manager', 'Accountant', 'Geologist', 'Blaster', 'Driller', 'Diamond Driller', 'Stock Keeper', 'Supervisor', 'Driver/Operator'],
-      'home':              ['Investor', 'Manager', 'Accountant', 'Geologist', 'Blaster', 'Driller', 'Diamond Driller', 'Stock Keeper', 'Supervisor', 'Driver/Operator'],
-      'map':               ['Investor', 'Manager', 'Accountant', 'Geologist', 'Blaster', 'Driller', 'Diamond Driller', 'Stock Keeper', 'Supervisor', 'Driver/Operator'],
+      'blasting':          ['manager', 'blaster', 'admin'],
+      'drilling':          ['manager', 'driller', 'admin'],
+      'diamond-drilling':  ['manager', 'diamond_driller', 'geologist', 'admin'],
+      'material-handling': ['manager', 'driver_operator', 'admin'],
+      'geophysics':        ['manager', 'geologist', 'geophysics_engineer', 'admin'],
+      'fleet':             ['manager', 'driver_operator', 'spotter', 'admin'],
+      'inventory':         ['manager', 'stock_keeper', 'admin'],
+      'finance':           ['accountant', 'admin'],
+      'invoices':          ['accountant', 'admin'],
+      'reports':           ['manager', 'accountant', 'admin'],
+      'safety':            ['manager', 'blaster', 'driller', 'diamond_driller', 'driver_operator', 'admin'],
+      'admin':             ['admin'],
+
+      'home':              ['manager', 'accountant', 'geologist', 'blaster', 'driller', 'diamond_driller', 'stock_keeper', 'driver_operator', 'spotter', 'admin'],
+      'map':               ['manager', 'admin'],
     }
 
     const allowed = ROUTE_ACCESS[mainModule]

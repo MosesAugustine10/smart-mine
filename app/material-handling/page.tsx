@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/badge"
 import { 
   Plus, Truck, Fuel, Gauge, TrendingUp,
   FileText, Activity, ArrowUpRight, ArrowDownRight, Gem,
-  Loader2, Landmark, History, Search
+  Loader2, Landmark, History, Search, Network
 } from "lucide-react"
 import Link from "next/link"
 import { MaterialHandlingTable } from "@/components/material-handling/material-handling-table"
 import { ProfessionalReportButton } from "@/components/ui/professional-report-button"
+import { ProfessionalReportDropdown } from "@/components/ui/professional-report-dropdown"
 import { ProductionChart } from "@/components/material-handling/production-chart"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format, isWithinInterval } from "date-fns"
@@ -119,133 +120,187 @@ export default function MaterialHandlingPage() {
   )
 
   return (
-    <div className="flex-1 overflow-auto p-8 space-y-10 bg-slate-50/30 dark:bg-slate-950/30 pb-20">
+    <div className="flex-1 overflow-auto bg-[#fafafa] dark:bg-slate-950 pb-20 p-8 space-y-10">
       
       {/* ── Header Area ── */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
-          <div className="space-y-1">
-              <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
-                      <Truck className="w-6 h-6" />
-                  </div>
-                  Haulage & Material
-              </h1>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Enterprise material flow & logistics governance</p>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-900 md:p-6 p-4 rounded-[2.5rem] border shadow-sm relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+           <Truck className="w-32 h-32 text-emerald-500" />
+        </div>
+        
+        <div className="flex items-center gap-5 relative z-10">
+          <div className="w-14 h-14 rounded-3xl bg-emerald-600 flex items-center justify-center text-white shadow-xl shadow-emerald-500/20">
+            <Truck className="w-7 h-7" />
           </div>
-          
-          <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-              <SystemPeriodFilter currentPeriod={period} onPeriodChange={setPeriod} />
-              
-              <div className="flex items-center gap-2">
-                <ProfessionalReportButton 
-                    data={filteredOps} 
-                    filename="HAULAGE_EXECUTIVE_REPORT" 
-                    title="Haulage & Material Handling Executive Report" 
-                    moduleColor="emerald"
-                    activePeriod={period}
-                    buttonLabel="Executive Report"
-                    charts={chartConfigs}
-                    kpis={[
-                      { label: "NET PRODUCTION", value: totalProduction.toLocaleString() + " t" },
-                      { label: "NET TRIPS", value: totalTrips },
-                      { label: "FUEL BURN", value: totalFuel.toLocaleString() + " L" }
-                    ]}
-                />
-              </div>
+          <div>
+             <h2 className="text-2xl font-black tracking-tighter uppercase italic text-slate-900 dark:text-white">Haulage Command</h2>
+             <div className="flex items-center gap-3 mt-1">
+                <Badge className="bg-emerald-500/10 text-emerald-600 border-0 font-black text-[9px] uppercase tracking-widest">{totalOps} Active</Badge>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">• Material Logic Governance</span>
+             </div>
+          </div>
+        </div>
 
-              <Link href="/material-handling/new">
-                <Button className="h-12 px-6 rounded-2xl bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-widest shadow-xl transition-all">
-                    <Plus className="w-4 h-4 mr-2" /> Log Shift
-                </Button>
-              </Link>
-          </div>
+        <div className="flex flex-wrap items-center gap-3 relative z-10">
+            <SystemPeriodFilter currentPeriod={period} onPeriodChange={setPeriod} />
+            
+            <ProfessionalReportDropdown 
+                configs={{
+                    budget: {
+                        data: filteredOps,
+                        filename: "HAULAGE_BUDGET_REPORT",
+                        moduleColor: "emerald",
+                        activePeriod: period,
+                        kpis: [
+                            { label: "FISCAL TARGET", value: "TZS " + totalBudget.toLocaleString() },
+                            { label: "ACTUAL SPEND", value: "TZS " + totalCost.toLocaleString() },
+                            { label: "VARIANCE", value: budgetVariation.toFixed(1) + "%", color: isOverBudget ? "text-rose-500" : "text-emerald-500" }
+                        ]
+                    },
+                    execution: {
+                        data: filteredOps,
+                        filename: "HAULAGE_EXECUTION_LOG",
+                        moduleColor: "emerald",
+                        activePeriod: period,
+                        charts: chartConfigs,
+                        kpis: [
+                            { label: "NET PRODUCTION", value: totalProduction.toLocaleString() + " t" },
+                            { label: "FUEL BURN", value: totalFuel.toLocaleString() + " L" },
+                            { label: "TRIP COUNT", value: totalTrips }
+                        ]
+                    },
+                    client: {
+                        data: filteredOps,
+                        filename: "HAULAGE_CLIENT_SUMMARY",
+                        moduleColor: "slate",
+                        activePeriod: period,
+                        kpis: [
+                            { label: "DELIVERY STATUS", value: "VERIFIED" },
+                            { label: "PRODUCTION YIELD", value: totalProduction.toLocaleString() + " t" },
+                            { label: "ASSET UPTIME", value: "98.4%" }
+                        ]
+                    }
+                }}
+            />
+
+            <Link href="/material-handling/new">
+              <Button className="h-14 px-8 rounded-2xl bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-[0.2em] shadow-2xl transition-all active:scale-95">
+                  <Plus className="w-4 h-4 mr-2" /> Log Shift
+              </Button>
+            </Link>
+        </div>
       </div>
 
       {/* ── KPI Grid ── */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-          <Card className="border-0 shadow-lg bg-white overflow-hidden relative group transition-all hover:scale-[1.02]">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600">
-                  <TrendingUp className="w-6 h-6" />
-                </div>
-                <Badge className="bg-emerald-100 text-emerald-700 border-0 font-black text-[9px] uppercase tracking-widest">Yield</Badge>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+           <Card className="border-0 shadow-xl bg-slate-900 text-white rounded-[2.5rem] overflow-hidden relative group hover:scale-[1.02] transition-all">
+              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                <TrendingUp className="w-16 h-16" />
               </div>
-              <h3 className="text-4xl font-black text-slate-800">{totalProduction.toLocaleString()}</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Net Tonnes Moved</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white overflow-hidden relative group transition-all hover:scale-[1.02]">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-red-50 rounded-2xl text-red-600">
-                  <Fuel className="w-6 h-6" />
+              <CardHeader className="pb-1">
+                <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-emerald-400">Total Yield</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                   <h3 className="text-5xl font-black tracking-tighter text-white font-mono">{totalProduction.toLocaleString()}</h3>
+                   <span className="text-xl text-emerald-500">t</span>
                 </div>
-                <Badge className="bg-red-100 text-red-700 border-0 font-black text-[9px] uppercase tracking-widest">{avgEfficiency.toFixed(1)} km/L</Badge>
-              </div>
-              <h3 className="text-4xl font-black text-slate-800">{totalFuel.toLocaleString()}</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Total Fuel Consumed (L)</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white overflow-hidden relative group transition-all hover:scale-[1.02]">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-blue-50 rounded-2xl text-blue-600">
-                  <Activity className="w-6 h-6" />
+                <div className="h-1.5 w-full bg-white/10 rounded-full mt-4 overflow-hidden">
+                   <div className="h-full bg-emerald-500" style={{ width: `100%` }} />
                 </div>
-                <Badge className="bg-blue-100 text-blue-700 border-0 font-black text-[9px] uppercase tracking-widest">Duty Cycles</Badge>
-              </div>
-              <h3 className="text-4xl font-black text-slate-800">{totalTrips}</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Total Shift Trips</p>
-            </CardContent>
-          </Card>
+              </CardContent>
+           </Card>
 
-          <Card className={`col-span-1 xl:col-span-2 border-0 shadow-xl overflow-hidden relative text-white transition-all hover:scale-[1.02] ${isOverBudget ? 'bg-red-600' : 'bg-slate-900'}`}>
-            <CardContent className="p-8">
-               <div className="flex justify-between items-center mb-6">
-                  <div className="p-3 bg-white/10 rounded-2xl">
-                    <Landmark className="w-6 h-6" />
-                  </div>
-                  <Badge className="bg-white/20 text-white border-0 font-black text-[9px] uppercase tracking-widest">Budget Variance: {Math.abs(budgetVariation).toFixed(1)}%</Badge>
-               </div>
-               <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-3xl font-black">TZS {totalCost.toLocaleString()}</h3>
-                    <p className="text-[10px] font-black opacity-60 uppercase tracking-widest mt-2">Spend Actual</p>
-                  </div>
-                  <div className="text-right">
-                    <h3 className="text-3xl font-black">{totalBudget.toLocaleString()}</h3>
-                    <p className="text-[10px] font-black opacity-60 uppercase tracking-widest mt-2">Planned Budget</p>
-                  </div>
-               </div>
-            </CardContent>
-          </Card>
+           <Card className="border-0 shadow-xl bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden relative group hover:scale-[1.02] transition-all">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-slate-400">Total Fuel Burn</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                   <h3 className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white font-mono">{totalFuel.toLocaleString()}</h3>
+                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Liters</span>
+                </div>
+                <p className="text-[9px] font-bold text-rose-500 uppercase mt-2">AVG {avgEfficiency.toFixed(1)} km/L efficiency</p>
+              </CardContent>
+           </Card>
+
+           <Card className="border-0 shadow-xl bg-emerald-600 text-white rounded-[2.5rem] overflow-hidden relative group hover:scale-[1.02] transition-all">
+              <div className="absolute top-0 right-0 p-6 opacity-10">
+                <Truck className="w-16 h-16" />
+              </div>
+              <CardHeader className="pb-1">
+                <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-emerald-200">Duty Cycles</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                   <h3 className="text-5xl font-black tracking-tighter text-white font-mono">{totalTrips}</h3>
+                   <span className="text-xs font-black text-emerald-200 uppercase tracking-widest">Trips</span>
+                </div>
+                <p className="text-[9px] font-bold text-emerald-100 uppercase mt-2">Across {totalTrucks} vehicles</p>
+              </CardContent>
+           </Card>
+
+           <Card className={`border-0 shadow-xl rounded-[2.5rem] overflow-hidden transition-all hover:scale-[1.02] ${isOverBudget ? 'bg-rose-600 text-white' : 'bg-slate-950 text-white'}`}>
+              <CardHeader className="pb-1">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-slate-400">Budget Variance</CardTitle>
+                  <Landmark className="w-4 h-4 text-emerald-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                   <div>
+                      <div className="text-[9px] font-bold uppercase tracking-widest opacity-60">Actual Spend (TZS)</div>
+                      <h3 className="text-3xl font-black tracking-tighter">{(totalCost/1000000).toFixed(2)}M</h3>
+                   </div>
+                   <div className="pt-2 border-t border-white/10">
+                      <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest">
+                         <span className="opacity-60">Target M</span>
+                         <span className={isOverBudget ? "text-white" : "text-emerald-400"}>
+                            {(totalBudget/1000000).toFixed(2)}M
+                         </span>
+                      </div>
+                   </div>
+                </div>
+              </CardContent>
+           </Card>
       </div>
 
       {/* ── Analytics & History ── */}
       <div className="grid lg:grid-cols-3 gap-8">
-          <Card className="lg:col-span-2 border-0 shadow-2xl rounded-[3rem] bg-white dark:bg-slate-900 p-8">
-             <CardHeader className="p-0 mb-6">
-                <CardTitle className="text-xl font-black uppercase italic tracking-tighter">Production Velocity</CardTitle>
-                <CardDescription className="text-[10px] font-bold uppercase tracking-widest">Segmented output vs efficiency trends</CardDescription>
-             </CardHeader>
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[3rem] p-8 border shadow-sm relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-8 opacity-5">
+                 <Activity className="w-32 h-32" />
+             </div>
+             <div className="flex items-center justify-between mb-8 relative z-10">
+                 <div>
+                    <h3 className="text-xl font-black tracking-tighter uppercase italic text-slate-900 dark:text-white">Production Velocity</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Segmented output vs efficiency trends</p>
+                 </div>
+             </div>
              <ProductionChart data={chartData} />
-          </Card>
+          </div>
 
-          <Card className="border-0 shadow-2xl rounded-[3rem] bg-emerald-600 text-white p-8 relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-10 translate-x-10" />
-             <Gem className="w-16 h-16 text-white/10 mb-6" />
-             <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-4 leading-none">Efficiency Data</h3>
-             <div className="space-y-4">
-                <div className="p-4 bg-white/10 rounded-2xl border border-white/5">
-                   <p className="text-[10px] font-black opacity-60 uppercase tracking-widest">Yield per Operation</p>
-                   <p className="text-2xl font-black">{(totalProduction / (totalOps || 1)).toLocaleString()} <span className="text-xs font-medium">t</span></p>
+          <Card className="rounded-[2.5rem] bg-slate-900 text-white overflow-hidden border-0 shadow-2xl relative">
+             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-800 opacity-20" />
+             <div className="p-8 relative z-10 h-full flex flex-col justify-between">
+                <div>
+                   <h3 className="text-xl font-black tracking-tighter uppercase italic text-emerald-400 mb-6 flex items-center gap-2">
+                       <Gem className="w-5 h-5" /> Efficiency Matrix
+                   </h3>
+                   <div className="space-y-6">
+                      <div className="border-b border-white/10 pb-4">
+                         <p className="text-[9px] font-black uppercase tracking-widest opacity-60 mb-1">Average Yield</p>
+                         <h4 className="text-3xl font-black tracking-tighter">{(totalProduction / (totalOps || 1)).toLocaleString()} <span className="text-xs text-emerald-400 opacity-80">t/op</span></h4>
+                      </div>
+                      <div>
+                         <p className="text-[9px] font-black uppercase tracking-widest opacity-60 mb-1">Vehicle Productivity</p>
+                         <h4 className="text-3xl font-black tracking-tighter">{(totalTrips / (totalTrucks || 1)).toFixed(1)} <span className="text-xs text-emerald-400 opacity-80">trips/truck</span></h4>
+                      </div>
+                   </div>
                 </div>
-                <div className="p-4 bg-white/10 rounded-2xl border border-white/5">
-                   <p className="text-[10px] font-black opacity-60 uppercase tracking-widest">Vehicle Productivity</p>
-                   <p className="text-2xl font-black">{(totalTrips / (totalTrucks || 1)).toFixed(1)} <span className="text-xs font-medium">trips/truck</span></p>
+                <div className="pt-8 opacity-50 flex justify-end">
+                   <Network className="w-24 h-24 absolute -bottom-4 -right-4" />
                 </div>
              </div>
           </Card>

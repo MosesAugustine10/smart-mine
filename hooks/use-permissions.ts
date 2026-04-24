@@ -23,7 +23,7 @@ export type ModuleKey =
   | 'drilling'
   | 'diamond'       // Diamond Drilling
   | 'handling'      // Material Handling
-  | 'geophysics'    // Geophysics / Advanced Assay
+  | 'geophysics'    // Geophysics
   | 'fleet'         // Vehicles, Fuel, Maintenance, Payload, Checklist
   | 'inventory'     // All Inventory categories
   | 'inventory_ppe' // PPE & General specifically

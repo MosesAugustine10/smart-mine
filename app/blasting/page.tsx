@@ -12,6 +12,7 @@ import {
 import Link from "next/link"
 import { BlastingTable } from "@/components/blasting/blasting-table"
 import { ProfessionalReportButton } from "@/components/ui/professional-report-button"
+import { ProfessionalReportDropdown } from "@/components/ui/professional-report-dropdown"
 import { BlastingBudgetVsActual } from "@/components/blasting/budget-vs-actual-chart"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { ModuleHelpNotebook } from "@/components/module-help-notebook"
@@ -116,42 +117,72 @@ export default function BlastingPage() {
   )
 
   return (
-    <div className="flex-1 overflow-auto p-8 space-y-10 bg-slate-50/30 dark:bg-slate-950/30 pb-20">
-      
-      {/* ── Header ── */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
-          <div className="space-y-1">
-              <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
-                      <Bomb className="w-6 h-6" />
-                  </div>
-                  Blasting Command
-              </h1>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Forensic blast planning & execution governance</p>
+    <div className="flex-1 overflow-auto bg-[#fafafa] dark:bg-slate-950 pb-20 p-8 space-y-10">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-900 md:p-6 p-4 rounded-[2.5rem] border shadow-sm relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+           <Bomb className="w-32 h-32 text-orange-500" />
+        </div>
+        
+        <div className="flex items-center gap-5 relative z-10">
+          <div className="w-14 h-14 rounded-3xl bg-orange-600 flex items-center justify-center text-white shadow-xl shadow-orange-500/20">
+            <Bomb className="w-7 h-7" />
           </div>
-          
-          <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-              <SystemPeriodFilter currentPeriod={period} onPeriodChange={setPeriod} />
-              <ProfessionalReportButton 
-                  data={filteredOps} 
-                  filename="BLASTING_EXECUTIVE_REPORT" 
-                  title="Blasting Ops Executive Report" 
-                  moduleColor="orange"
-                  activePeriod={period}
-                  charts={chartConfigs}
-                  kpis={[
-                    { label: "TOTAL TONNAGE", value: totalTonnage.toLocaleString() + " t" },
-                    { label: "EXPLOSIVE WEIGHT", value: totalExplosiveWeight.toLocaleString() + " kg" },
-                    { label: "AVG POWDER FACTOR", value: (totalExplosiveWeight / (totalTonnage || 1)).toFixed(3) + " kg/t" }
-                  ]}
-              />
-              <ModuleHelpNotebook moduleTitle="Blasting" />
-              <Link href="/blasting/new">
-                <Button className="h-12 px-6 rounded-2xl bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-widest shadow-xl transition-all">
-                    <Plus className="w-4 h-4 mr-2" /> New Blast
-                </Button>
-              </Link>
+          <div>
+             <h2 className="text-2xl font-black tracking-tighter uppercase italic text-slate-900 dark:text-white">Blasting Command</h2>
+             <div className="flex items-center gap-3 mt-1">
+                <Badge className="bg-orange-500/10 text-orange-600 border-0 font-black text-[9px] uppercase tracking-widest">{totalOps} Active</Badge>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">• Operations Governance</span>
+             </div>
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto relative z-10">
+            <SystemPeriodFilter currentPeriod={period} onPeriodChange={setPeriod} />
+            <ProfessionalReportDropdown 
+                configs={{
+                    budget: {
+                        data: filteredOps,
+                        filename: "BLASTING_BUDGET_REPORT",
+                        moduleColor: "orange",
+                        activePeriod: period,
+                        kpis: [
+                            { label: "PLANNED BUDGET", value: "TZS " + (totalTonnage * 2500).toLocaleString() }, // Simulated budget
+                            { label: "ACTUAL SPEND", value: "TZS " + totalCost.toLocaleString() },
+                            { label: "VARIANCE", value: (((totalCost - (totalTonnage * 2500)) / (totalTonnage * 2500 || 1)) * 100).toFixed(1) + "%" }
+                        ]
+                    },
+                    execution: {
+                        data: filteredOps,
+                        filename: "BLASTING_EXECUTION_LOG",
+                        moduleColor: "orange",
+                        activePeriod: period,
+                        charts: chartConfigs,
+                        kpis: [
+                            { label: "TOTAL YIELD", value: totalTonnage.toLocaleString() + " t" },
+                            { label: "AVG VIBRATION", value: avgVibration.toFixed(2) + " mm/s" },
+                            { label: "EFFICIENCY", value: (totalExplosiveWeight / (totalTonnage || 1)).toFixed(3) + " kg/t" }
+                        ]
+                    },
+                    client: {
+                        data: filteredOps,
+                        filename: "BLASTING_CLIENT_SUMMARY",
+                        moduleColor: "slate",
+                        activePeriod: period,
+                        kpis: [
+                            { label: "PROJECT STATUS", value: "ON TRACK" },
+                            { label: "SAFETY RATING", value: highVibrationCount > 0 ? "REVIEW" : "100%" },
+                            { label: "VOLUME MOVED", value: totalTonnage.toLocaleString() + " t" }
+                        ]
+                    }
+                }}
+            />
+            <ModuleHelpNotebook moduleTitle="Blasting" />
+            <Link href="/blasting/new">
+              <Button className="h-14 px-8 rounded-2xl bg-slate-900 hover:bg-black text-white font-black uppercase text-[10px] tracking-[0.2em] shadow-2xl transition-all active:scale-95">
+                  <Plus className="w-4 h-4 mr-2" /> New Blast
+              </Button>
+            </Link>
+        </div>
       </div>
 
       {/* ── Alerts ── */}
@@ -170,88 +201,104 @@ export default function BlastingPage() {
       )}
 
       {/* ── KPI Grid ── */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-           <Card className="border-0 shadow-lg bg-white overflow-hidden relative group transition-all hover:scale-[1.02]">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-orange-50 rounded-2xl text-orange-600">
-                  <Bomb className="w-6 h-6" />
-                </div>
-                <Badge className="bg-orange-100 text-orange-700 border-0 font-black text-[9px] uppercase tracking-widest">{totalOps} Blasts</Badge>
+      {/* ── KPI Grid ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+           <Card className="border-0 shadow-xl bg-slate-900 text-white rounded-[2.5rem] overflow-hidden relative group hover:scale-[1.02] transition-all">
+              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Bomb className="w-16 h-16" />
               </div>
-              <h3 className="text-4xl font-black text-slate-800">{totalTonnage.toLocaleString()}</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Total Tonnage Yield (t)</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white overflow-hidden relative group transition-all hover:scale-[1.02]">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-red-50 rounded-2xl text-red-600">
-                  <Activity className="w-6 h-6" />
+              <CardHeader className="pb-1">
+                <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-orange-400">Total Yield</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                   <h3 className="text-5xl font-black tracking-tighter text-white font-mono">{totalTonnage.toLocaleString()}</h3>
+                   <span className="text-xl text-orange-500">t</span>
                 </div>
-                <Badge className="bg-red-100 text-red-700 border-0 font-black text-[9px] uppercase tracking-widest">Heavy Load</Badge>
+                <div className="h-1.5 w-full bg-white/10 rounded-full mt-4 overflow-hidden">
+                   <div className="h-full bg-orange-500" style={{ width: `100%` }} />
+                </div>
+              </CardContent>
+           </Card>
+
+           <Card className="border-0 shadow-xl bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden relative group hover:scale-[1.02] transition-all">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-slate-400">Heavy Load</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                   <h3 className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white font-mono">{totalExplosiveWeight.toLocaleString()}</h3>
+                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest">kg</span>
+                </div>
+                <p className="text-[9px] font-bold text-orange-500 uppercase mt-2">Total Explosives Used</p>
+              </CardContent>
+           </Card>
+
+           <Card className="border-0 shadow-xl bg-purple-600 text-white rounded-[2.5rem] overflow-hidden relative group hover:scale-[1.02] transition-all">
+              <div className="absolute top-0 right-0 p-6 opacity-10">
+                <Gauge className="w-16 h-16" />
               </div>
-              <h3 className="text-4xl font-black text-slate-800">{totalExplosiveWeight.toLocaleString()}</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Total Explosives (kg)</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white overflow-hidden relative group transition-all hover:scale-[1.02]">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600">
-                  <DollarSign className="w-6 h-6" />
+              <CardHeader className="pb-1">
+                <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-purple-200">Seismic Trace</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                   <h3 className="text-5xl font-black tracking-tighter text-white font-mono">{avgVibration.toFixed(2)}</h3>
+                   <span className="text-xs font-black text-purple-200 uppercase tracking-widest">mm/s</span>
                 </div>
-                <Badge className="bg-emerald-100 text-emerald-700 border-0 font-black text-[9px] uppercase tracking-widest">OpEx</Badge>
-              </div>
-              <h3 className="text-3xl font-black text-slate-800">{(totalCost/1000000).toFixed(2)}M</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Actual Shift Expenditure</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white overflow-hidden relative group transition-all hover:scale-[1.02]">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-purple-50 rounded-2xl text-purple-600">
-                  <Gauge className="w-6 h-6" />
+                <p className="text-[9px] font-bold text-purple-100 uppercase mt-2">Avg Peak Vibration</p>
+              </CardContent>
+           </Card>
+           
+           <Card className="border-0 shadow-xl bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden relative group hover:scale-[1.02] transition-all">
+              <CardHeader className="pb-1">
+                <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-slate-400">Yield Value</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                   <div>
+                      <h3 className="text-3xl font-black tracking-tighter">{(totalCost/1000000).toFixed(2)}M</h3>
+                      <div className="text-[9px] font-bold uppercase tracking-widest opacity-60 mt-1">Shift Expediture TZS</div>
+                   </div>
                 </div>
-                <Badge className="bg-purple-100 text-purple-700 border-0 font-black text-[9px] uppercase tracking-widest">Vibration</Badge>
-              </div>
-              <h3 className="text-4xl font-black text-slate-800">{avgVibration.toFixed(2)}</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-4">Avg Vibration (mm/s)</p>
-            </CardContent>
-          </Card>
+              </CardContent>
+           </Card>
 
-          <Card className="col-span-1 xl:col-span-2 border-0 shadow-xl bg-slate-900 text-white p-8 rounded-[2.5rem] relative overflow-hidden transition-all hover:scale-[1.02]">
-             <div className="flex justify-between items-center mb-6">
-                <div className="p-3 bg-white/10 rounded-2xl">
-                    <TrendingUp className="w-6 h-6" />
+           <Card className="border-0 shadow-xl rounded-[2.5rem] overflow-hidden transition-all hover:scale-[1.02] bg-emerald-600 text-white">
+              <CardHeader className="pb-1">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-[10px] font-black tracking-[0.2em] uppercase text-emerald-200">Powder Factor</CardTitle>
                 </div>
-                <Badge className="bg-white/20 text-white border-0 font-black text-[9px] uppercase tracking-widest">Efficiency Scan</Badge>
-             </div>
-             <h3 className="text-3xl font-black uppercase tracking-tighter italic">{(totalExplosiveWeight / (totalTonnage || 1)).toFixed(3)} kg/t</h3>
-             <p className="text-[10px] font-black opacity-60 uppercase tracking-widest mt-2">Aggregated Powder Factor</p>
-             <Landmark className="absolute -bottom-6 -right-6 w-32 h-32 opacity-5" />
-          </Card>
+              </CardHeader>
+              <CardContent>
+                 <div className="flex items-baseline gap-2">
+                   <h3 className="text-4xl font-black tracking-tighter text-white">{(totalExplosiveWeight / (totalTonnage || 1)).toFixed(3)}</h3>
+                   <span className="text-xs font-black text-emerald-200 uppercase tracking-widest">kg/t</span>
+                </div>
+                <p className="text-[9px] font-bold text-emerald-100 uppercase mt-2">Aggregated Efficiency Scan</p>
+              </CardContent>
+           </Card>
       </div>
 
       {/* ── Visual Analytics ── */}
       <div className="grid gap-8 lg:grid-cols-2">
-           <Card className="border-0 shadow-2xl rounded-[3rem] bg-white dark:bg-slate-900 p-8">
-                <h3 className="text-xl font-black uppercase italic tracking-tighter mb-6 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-orange-600" />
-                    Powder Factor Load
-                </h3>
-                <div className="h-64 w-full">
+           <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-8 border shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                   <TrendingUp className="w-32 h-32" />
+                </div>
+                <div className="mb-8 relative z-10">
+                   <h3 className="text-xl font-black tracking-tighter uppercase italic text-slate-900 dark:text-white">Powder Factor Load</h3>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Explosive density across operations</p>
+                </div>
+                <div className="h-64 w-full relative z-10">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                            <XAxis dataKey="label" fontSize={10} fontWeight={800} axisLine={false} tickLine={false} />
-                            <YAxis fontSize={10} fontWeight={800} axisLine={false} tickLine={false} />
-                            <Tooltip contentStyle={{ borderRadius: '12px', border: 'none' }} />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.05} stroke="#ea580c" />
+                            <XAxis dataKey="label" fontSize={10} fontWeight={900} axisLine={false} tickLine={false} />
+                            <YAxis fontSize={10} fontWeight={900} axisLine={false} tickLine={false} />
+                            <Tooltip contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.2)', padding: '20px' }} cursor={{ fill: 'rgba(234, 88, 12, 0.05)' }} />
                             <ReferenceLine y={0.5} stroke="#ef4444" strokeDasharray="3 3" />
-                            <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                            <Bar dataKey="value" radius={[12, 12, 4, 4]} barSize={40}>
                                 {chartData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={entry.value > 0.5 ? '#ef4444' : '#ea580c'} />
                                 ))}
@@ -259,25 +306,28 @@ export default function BlastingPage() {
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
-           </Card>
+           </div>
 
-           <Card className="border-0 shadow-2xl rounded-[3rem] bg-white dark:bg-slate-900 p-8">
-                <h3 className="text-xl font-black uppercase italic tracking-tighter mb-6 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-blue-600" />
-                    Rock Yield Velocity
-                </h3>
-                <div className="h-64 w-full">
+           <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-8 border shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                   <Activity className="w-32 h-32" />
+                </div>
+                <div className="mb-8 relative z-10">
+                   <h3 className="text-xl font-black tracking-tighter uppercase italic text-slate-900 dark:text-white">Rock Yield Velocity</h3>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total output volume per blast</p>
+                </div>
+                <div className="h-64 w-full relative z-10">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                            <XAxis dataKey="label" fontSize={10} fontWeight={800} axisLine={false} tickLine={false} />
-                            <YAxis fontSize={10} fontWeight={800} axisLine={false} tickLine={false} />
-                            <Tooltip contentStyle={{ border: 'none', borderRadius: '12px' }} />
-                            <Bar dataKey="tonnage" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.05} stroke="#3b82f6" />
+                            <XAxis dataKey="label" fontSize={10} fontWeight={900} axisLine={false} tickLine={false} />
+                            <YAxis fontSize={10} fontWeight={900} axisLine={false} tickLine={false} />
+                            <Tooltip contentStyle={{ border: 'none', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.2)', padding: '20px' }} cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }} />
+                            <Bar dataKey="tonnage" fill="#3b82f6" radius={[12, 12, 4, 4]} barSize={40} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
-           </Card>
+           </div>
       </div>
 
       {/* ── Table ── */}

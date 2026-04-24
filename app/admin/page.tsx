@@ -257,28 +257,7 @@ export default function AdminDashboard() {
           </div>
           
           <div className="space-y-10">
-             <Card className="border-0 shadow-2xl rounded-[3.5rem] overflow-hidden bg-white dark:bg-slate-900 border-t-[12px] border-t-indigo-600">
-                <CardHeader className="bg-slate-950 text-white p-10">
-                   <CardTitle className="text-2xl font-black uppercase italic tracking-tighter">Assay Control</CardTitle>
-                </CardHeader>
-                <CardContent className="p-10 space-y-8">
-                   <div className="grid grid-cols-2 gap-6">
-                      <div className="p-8 bg-slate-50 dark:bg-slate-950 rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800">
-                         <Beaker className="w-10 h-10 text-indigo-500 mb-6" />
-                         <p className="text-4xl font-black text-slate-800 dark:text-white">INTEL</p>
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Core Lab Matrix</p>
-                      </div>
-                      <div className="p-8 bg-indigo-50 rounded-[2.5rem] border-2 border-indigo-100">
-                         <FlaskConical className="w-10 h-10 text-indigo-600 mb-6" />
-                         <p className="text-4xl font-black text-indigo-700">64</p>
-                         <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Active Samples</p>
-                      </div>
-                   </div>
-                   <Link href="/diamond-drilling/assay" className="w-full h-16 bg-slate-900 hover:bg-black text-white rounded-2xl flex items-center justify-center font-black uppercase text-sm tracking-widest shadow-2xl transition-all hover:scale-[1.02]">
-                      Launch Lab Executive Portal
-                   </Link>
-                </CardContent>
-             </Card>
+
 
              <PredictiveMaintenance />
           </div>

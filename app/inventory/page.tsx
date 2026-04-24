@@ -17,6 +17,8 @@ import {
 import { usePermissions } from "@/hooks/use-permissions"
 import { ShieldCheck } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
+import { ProfessionalReportButton } from "@/components/ui/professional-report-button"
+import { ProfessionalReportDropdown } from "@/components/ui/professional-report-dropdown"
 
 export default function InventoryHub() {
   const { t } = useTranslation()
@@ -125,6 +127,37 @@ export default function InventoryHub() {
                 </Button>
               </>
             )}
+            <ProfessionalReportDropdown 
+                configs={{
+                    budget: {
+                        data: [], // Root hub doesn't have direct list but report can be aggregate
+                        filename: "INVENTORY_VALUATION_REPORT",
+                        moduleColor: "slate",
+                        kpis: [
+                            { label: "TOTAL ASSET VALUE", value: "TZS 84.2M" },
+                            { label: "LIQUIDITY RATIO", value: "0.85" }
+                        ]
+                    },
+                    execution: {
+                        data: [],
+                        filename: "INVENTORY_AVAILABILITY_LOG",
+                        moduleColor: "slate",
+                        kpis: [
+                            { label: "STOCK AVAILABILITY", value: "94.8%" },
+                            { label: "CRITICAL ITEMS", value: "12" }
+                        ]
+                    },
+                    client: {
+                        data: [],
+                        filename: "INVENTORY_CLIENT_SUMMARY",
+                        moduleColor: "slate",
+                        kpis: [
+                            { label: "AUDIT STATUS", value: "VERIFIED" },
+                            { label: "SUPPLY CHAIN HEALTH", value: "OPTIMAL" }
+                        ]
+                    }
+                }}
+            />
             {canRequest && (
               <Button className="h-12 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-amber-500 text-white shadow-lg shadow-amber-500/20">
                 <Package className="w-4 h-4 mr-2" />

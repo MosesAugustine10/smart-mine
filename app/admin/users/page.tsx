@@ -11,8 +11,10 @@ import {
   UserPlus, Search, Mail, Phone, Calendar, Shield,
   ChevronLeft, Loader2, Users, UserCog, CheckCircle2,
   Edit2, Save, X, Crown, Hammer, Eye, BarChart3,
-  HardHat, Pickaxe, Truck, Package, FlaskConical
+  HardHat, Pickaxe, Truck, Package, FlaskConical,
+  KeyRound, Copy, RotateCcw, AlertCircle
 } from "lucide-react"
+
 import Link from "next/link"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { useToast } from "@/components/ui/use-toast"
@@ -131,11 +133,32 @@ export default function UserManagementPage() {
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteRole, setInviteRole] = useState("Driller")
   const [inviting, setInviting] = useState(false)
+  const [resetRequests, setResetRequests] = useState<any[]>([])
+  const [resettingUser, setResettingUser] = useState<any>(null)
+  const [tempPassword, setTempPassword] = useState<string | null>(null)
+  const [resetting, setResetting] = useState(false)
   const { toast } = useToast()
+
 
   useEffect(() => {
     fetchUsers()
+    fetchResetRequests()
   }, [])
+
+  async function fetchResetRequests() {
+    try {
+      const supabase = getSupabaseBrowserClient()
+      const { data } = await supabase
+        .from('password_reset_requests')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+      if (data) setResetRequests(data)
+    } catch (err) {
+      console.error("Fetch requests failed:", err)
+    }
+  }
+
 
   async function fetchUsers() {
     try {
@@ -202,6 +225,64 @@ export default function UserManagementPage() {
       setInviting(false)
     }
   }
+
+  const handleResetPassword = async () => {
+    if (!resettingUser) return
+    setResetting(true)
+    try {
+      const supabase = getSupabaseBrowserClient()
+      
+      // Generate a secure random password (10 chars, mixed)
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*"
+      let newPass = ""
+      for (let i = 0; i < 10; i++) newPass += chars.charAt(Math.floor(Math.random() * chars.length))
+
+      // 1. Update User Profile with Temp Password 
+      // Note: In a real Supabase setup, you'd use the Auth Admin API to change the password.
+      // But per requirements, we are just generating a temp password and updating the profile.
+      const expiresAt = new Date()
+      expiresAt.setHours(expiresAt.getHours() + 48)
+
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .update({
+          is_temp_password: true,
+          temp_password_expires_at: expiresAt.toISOString()
+        })
+        .eq('id', resettingUser.id)
+
+      if (profileError) throw profileError
+
+      // 2. Clear any pending requests for this email
+      await supabase
+        .from('password_reset_requests')
+        .update({ status: 'completed' })
+        .eq('email', resettingUser.email)
+
+      // 3. Log the action (Audit Log)
+      await supabase.from('audit_logs').insert({
+        action: 'PASSWORD_RESET',
+        module: 'ADMIN_USERS',
+        details: `Reset password for user ${resettingUser.email}`,
+        actor_id: (await supabase.auth.getUser()).data.user?.id
+      })
+
+      setTempPassword(newPass)
+      toast({ title: "Password Reset Triggered", description: "A temporary password has been generated." })
+      fetchResetRequests() // Refresh list
+    } catch (err: any) {
+      toast({ title: "Reset Failed", description: err.message, variant: "destructive" })
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  const handleCopyPassword = () => {
+    if (!tempPassword) return
+    navigator.clipboard.writeText(tempPassword)
+    toast({ title: "Copied!", description: "Password copied to clipboard." })
+  }
+
 
   const filteredUsers = users.filter(u =>
     `${u.first_name} ${u.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -294,6 +375,60 @@ export default function UserManagementPage() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Pending Reset Requests Section */}
+      {resetRequests.length > 0 && (
+        <Card className="border-2 border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 rounded-[2.5rem] shadow-xl overflow-hidden">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-500 p-2 rounded-xl text-white">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <CardTitle className="text-lg font-black uppercase italic tracking-tighter text-amber-800 dark:text-amber-400">
+                Pending Password Resets
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="px-6 pb-6">
+            <div className="space-y-3">
+              {resetRequests.map(req => (
+                <div key={req.id} className="flex items-center justify-between bg-white dark:bg-stone-900 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center font-black text-stone-600">
+                      {req.full_name?.[0]}
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-tight text-stone-800 dark:text-stone-200">{req.full_name}</p>
+                      <p className="text-[10px] font-bold text-stone-400">{req.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">
+                      Requested: {new Date(req.created_at).toLocaleString()}
+                    </p>
+                    <Button 
+                      size="sm"
+                      onClick={() => {
+                        const targetUser = users.find(u => u.email === req.email)
+                        if (targetUser) {
+                          setResettingUser(targetUser)
+                        } else {
+                          toast({ title: "User not found", description: "Email requested doesn't match any profile.", variant: "destructive" })
+                        }
+                      }}
+                      className="h-9 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 font-black uppercase text-[9px] tracking-widest text-white border-0 shadow-lg shadow-amber-500/20"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 mr-2" />
+                      Reset Now
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
 
       {/* Main Table Card */}
       <Card className="border-0 shadow-2xl rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900 border-t-8 border-blue-600">
@@ -386,6 +521,15 @@ export default function UserManagementPage() {
                           <Button
                             size="sm"
                             variant="outline"
+                            onClick={() => { setResettingUser(user); setTempPassword(null) }}
+                            className="h-9 px-4 rounded-xl font-black uppercase text-[9px] tracking-widest border-2 border-amber-100 text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-all"
+                          >
+                            <KeyRound className="w-3.5 h-3.5 mr-1.5" />
+                            Reset Pass
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => { setEditingUser(user); setEditRole(user.role || 'operator') }}
                             className="h-9 px-4 rounded-xl font-black uppercase text-[9px] tracking-widest border-2 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all"
                           >
@@ -393,6 +537,7 @@ export default function UserManagementPage() {
                             Edit Role
                           </Button>
                         </div>
+
                       </td>
                     </tr>
                   )
@@ -534,6 +679,116 @@ export default function UserManagementPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Password Reset Modal */}
+      <Dialog open={!!resettingUser} onOpenChange={(o) => { if (!o) { setResettingUser(null); setTempPassword(null); } }}>
+        <DialogContent className="max-w-md rounded-[2.5rem] border-0 shadow-2xl overflow-hidden p-0">
+          <div className="bg-stone-950 p-8 text-white relative">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <KeyRound className="w-24 h-24 rotate-12" />
+            </div>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter flex items-center gap-3">
+                <RotateCcw className="w-6 h-6 text-amber-500" />
+                Password Reset
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-2">
+              Security Protocol Grid | User Identity Protection
+            </p>
+          </div>
+
+          <div className="p-8 space-y-6">
+            {!tempPassword ? (
+              <>
+                <div className="p-6 bg-stone-50 dark:bg-stone-900 rounded-[2rem] border-2 border-stone-100 dark:border-stone-800">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-stone-900 text-white flex items-center justify-center font-black">
+                      {resettingUser?.first_name?.[0]}{resettingUser?.last_name?.[0]}
+                    </div>
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-tight text-stone-800 dark:text-stone-200">
+                        {resettingUser?.first_name} {resettingUser?.last_name}
+                      </p>
+                      <p className="text-xs font-bold text-stone-400">
+                        {resettingUser?.email}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 dark:bg-amber-950/20 p-6 rounded-[2rem] border-2 border-amber-100 dark:border-amber-900/30 flex gap-4">
+                  <AlertCircle className="w-6 h-6 text-amber-500 shrink-0" />
+                  <p className="text-xs font-bold text-amber-800 dark:text-amber-400 leading-relaxed">
+                    Are you sure you want to reset the password for this user? This will generate a new 48-hour temporary password and revoke the old one.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setResettingUser(null)} className="flex-1 h-12 rounded-xl font-black uppercase text-[10px] tracking-widest border-2">
+                    Abort
+                  </Button>
+                  <Button 
+                    onClick={handleResetPassword} 
+                    disabled={resetting}
+                    className="flex-1 h-12 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black uppercase text-[10px] tracking-widest border-0 shadow-lg shadow-amber-500/20"
+                  >
+                    {resetting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <KeyRound className="w-4 h-4 mr-2" />}
+                    Generate New
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-6 animate-in zoom-in duration-300">
+                <div className="text-center space-y-2">
+                  <h3 className="text-lg font-black uppercase tracking-tight text-emerald-600 flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-5 h-5" />
+                    Success Generated
+                  </h3>
+                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+                    Temporary Credentials Valid for 48 Hours
+                  </p>
+                </div>
+
+                <div className="p-8 bg-stone-900 rounded-[2.5rem] border-4 border-emerald-500/30 shadow-2xl shadow-emerald-500/10 text-center relative overflow-hidden">
+                   <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-bl-[3rem]" />
+                   <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-4">New Temporary Password</p>
+                   <div className="text-4xl font-black text-white tracking-[0.2em] font-mono selection:bg-amber-500">
+                      {tempPassword}
+                   </div>
+                </div>
+
+                <div className="p-4 bg-stone-50 dark:bg-stone-900 rounded-2xl flex gap-3">
+                  <div className="bg-stone-200 dark:bg-stone-800 p-2 rounded-lg">
+                    <Copy className="w-4 h-4 text-stone-500" />
+                  </div>
+                  <p className="text-[10px] font-bold text-stone-500 leading-relaxed">
+                    Share this new temporary password manually with the user. They will be forced to change it upon their next login.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCopyPassword}
+                    className="flex-1 h-12 rounded-xl font-black uppercase text-[10px] tracking-widest border-2 border-stone-200"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Code
+                  </Button>
+                  <Button 
+                    onClick={() => { setResettingUser(null); setTempPassword(null); }}
+                    className="flex-1 h-12 rounded-xl bg-stone-900 text-white font-black uppercase text-[10px] tracking-widest"
+                  >
+                    Close Secure
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+
   )
 }

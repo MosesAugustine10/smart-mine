@@ -36,12 +36,7 @@ export const chimboKeyLabels: Record<string, string> = {
   description: "Description / Maelezo",
   receipt_no: "Receipt / Namba ya Risiti",
   
-  // Assay
-  sample_id: "Sample ID / Namba ya Sampuli",
-  weight: "Weight / Uzito wa Sanduku",
-  grade: "Au Grade / Karati/Grade",
-  status: "Status / Hali",
-  laboratory: "Laboratory / Maabara",
+
   
   // Safety / Personnel
   type: "Type / Aina",

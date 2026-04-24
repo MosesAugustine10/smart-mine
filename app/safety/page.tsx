@@ -144,6 +144,25 @@ export default function SafetyComplianceDashboard() {
           </div>
       </div>
 
+      <div className="mx-6 mt-4 mb-2 flex flex-wrap gap-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 border shadow-sm">
+        <div className="w-full text-xs font-black uppercase tracking-widest text-slate-500 mb-1">Global Reporting Actions</div>
+        <ProfessionalReportButton 
+              data={filteredIncidents} 
+              filename="SAFETY_OPERATIONS_BUDGET_REPORT" 
+              title="Budget & Financial Estimations Report" 
+              moduleColor="emerald"
+              buttonLabel="BUDGET DOWNLOAD REPORT"
+              headers={['incident_date', 'severity', 'budget_impact', 'status']}
+            />
+            <ProfessionalReportButton 
+              data={filteredIncidents} 
+              filename="SAFETY_OPERATIONS_EXECUTION_REPORT" 
+              title="Execution & Operations Report" 
+              moduleColor="emerald"
+              buttonLabel="EXECUTION DOWNLOAD REPORT"
+            />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
           <Link href="/safety/new" className="group">
               <Card className="h-48 border-0 shadow-2xl rounded-[3rem] overflow-hidden bg-white hover:bg-red-600 transition-all duration-500 cursor-pointer border-l-[12px] border-red-600 group-hover:border-white">

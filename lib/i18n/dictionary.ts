@@ -28,6 +28,25 @@ export const dictionary = {
     english: "English",
     kiswahili: "Kiswahili",
     
+    // Login & Forgot Password
+    welcomeBack: "Welcome Back",
+    signInSubtitle: "Sign in to your account to continue",
+    emailAddress: "Email Address",
+    password: "Password",
+    enterPassword: "Enter your password",
+    forgotPassword: "Forgot password?",
+    signIn: "Sign In",
+    forgotPasswordTitle: "Forgot Password",
+    forgotPasswordInstruction: "Enter your email address and we'll send you a reset link.",
+    sendResetLink: "Send Reset Link",
+    backToLogin: "Back to Login",
+    forgotPasswordSubmitted: "Your request has been submitted. Please contact your Administrator to reset your password.",
+    resetPassword: "Reset Password",
+    resetPasswordConfirm: "Are you sure you want to reset the password for this user? This will generate a new temporary password.",
+    tempPasswordGenerated: "Temporary Password Generated",
+    shareTempPassword: "Share this temporary password manually with the user.",
+
+    
     // Labels & Form Fields
     region: "Region",
     location: "Location",
@@ -226,6 +245,25 @@ export const dictionary = {
     // Success Messages
     form_success: "Taarifa zimehifadhiwa kikamilifu.",
     signature_success: "Uidhinishaji umethibitishwa.",
+
+    // Login & Forgot Password
+    welcomeBack: "Karibu Tena",
+    signInSubtitle: "Ingia kwenye akaunti yako kuendelea",
+    emailAddress: "Anwani ya Barua Pepe",
+    password: "Nenosiri",
+    enterPassword: "Ingiza nenosiri lako",
+    forgotPassword: "Umesahau nenosiri?",
+    signIn: "Ingia",
+    forgotPasswordTitle: "Umesahau Nenosiri",
+    forgotPasswordInstruction: "Ingiza anwani yako ya barua pepe na tutakutumia kiungo cha kuweka upya.",
+    sendResetLink: "Tuma Kiungo",
+    backToLogin: "Rudi kwenye Ingia",
+    forgotPasswordSubmitted: "Ombi lako limewasilishwa. Tafadhali wasiliana na Msimamizi wako ili kuweka upya nenosiri lako.",
+    resetPassword: "Weka Upya Nenosiri",
+    resetPasswordConfirm: "Una uhakika unataka kuweka upya nenosiri la mtumiaji huyu? Hii itazalisha nenosiri jipya la muda.",
+    tempPasswordGenerated: "Nenosiri la Muda Limetengenezwa",
+    shareTempPassword: "Shiriki nenosiri hili la muda na mtumiaji.",
+
   }
 }
 

@@ -115,27 +115,15 @@ const MODULE_HELP_REGISTRY: Record<string, HelpContent> = {
         sw: {
             purpose: "Mfumo wa kuhifadhi na kuchambua data za utafiti wa ardhi (Seismic, IP, Mag). Inasaidia kuainisha maeneo mapya yenye madini.",
             efficiency: "Inarahisisha kazi ya wanajiolojia kwa kutoa taswira ya miamba iliyo chini ya ardhi bila kuchimba.",
-            pro_tips: ["Hakikisha 'GPS coordinates' za kila kituo cha utafiti zimeingizwa kwa usahihi.", "Linganisha data za IP na matokeo ya uchorongaji (Assay) ili kurekebisha ramani."]
+            pro_tips: ["Hakikisha 'GPS coordinates' za kila kituo cha utafiti zimeingizwa kwa usahihi."]
         },
         en: {
             purpose: "Analytical store for geophysical survey data (Seismic, Induced Polarization, Magnetics) for advanced target generation.",
             efficiency: "Streamlines exploration workflows by providing subterranean lithological visualizations for targeted drilling.",
-            pro_tips: ["Strictly validate spatial GPS coordinates for each survey station to ensure grid integrity.", "Correlate IP anomalies with drilling assays to refine the predictive geological model."]
+            pro_tips: ["Strictly validate spatial GPS coordinates for each survey station to ensure grid integrity."]
         }
     },
-    "Assay": {
-        icon: FlaskConical,
-        sw: {
-            purpose: "Moduli ya maabara. Inasimamia matokeo ya uchenjuaji wa sampuli na kuhakikisha ubora (QA/QC) unazingatiwa.",
-            efficiency: "Inatoa majibu ya haraka kuhusu kiasi cha madini (Grade) kilichopo kwenye mawe yaliyovunwa.",
-            pro_tips: ["Weka 'Standards' na 'Blanks' kwenye kila kundi la sampuli ili kuhakiki usahihi wa maabara.", "Fuatilia 'Duplicate samples' kuona utofauti wa majibu."]
-        },
-        en: {
-            purpose: "Laboratory Information Management System (LIMS) for managing geochemical assays and QA/QC validation protocols.",
-            efficiency: "Facilitates rapid grade control and strategic decision-making through high-fidelity sample processing logs.",
-            pro_tips: ["Enforce rigorous insertion of standards, blanks, and duplicates to validate analytical precision.", "Monitor laboratory turnaround time (TAT) to prevent operational delays in ore extraction."]
-        }
-    },
+
     "Finance": {
         icon: Landmark,
         sw: {
@@ -247,7 +235,7 @@ export function ModuleHelpNotebook({ moduleTitle }: ModuleHelpNotebookProps) {
     else if (normalizedTitle.includes("haulage") || normalizedTitle.includes("material")) moduleKey = "Material Handling";
     else if (normalizedTitle.includes("inventory") || normalizedTitle.includes("ghala") || normalizedTitle.includes("stoo")) moduleKey = "Inventory";
     else if (normalizedTitle.includes("geophysic") || normalizedTitle.includes("ramani")) moduleKey = "Geophysics";
-    else if (normalizedTitle.includes("assay") || normalizedTitle.includes("maabara")) moduleKey = "Assay";
+
     else if (normalizedTitle.includes("finance") || normalizedTitle.includes("billing") || normalizedTitle.includes("malipo") || normalizedTitle.includes("invoice")) moduleKey = "Finance";
     else if (normalizedTitle.includes("safety") || normalizedTitle.includes("ajali") || normalizedTitle.includes("usalama")) moduleKey = "Safety";
     else if (normalizedTitle.includes("dashbodi") || (normalizedTitle.includes("dashboard") && normalizedTitle.includes("chimbo"))) moduleKey = "Dashboard";

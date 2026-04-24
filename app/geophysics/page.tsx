@@ -112,7 +112,7 @@ export default function GeophysicsDashboardPage({ searchParams }: any) {
 
         {/* Premium KPI Grid - 5 Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-600 to-purple-800 text-white">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-600 to-purple-800 text-white rounded-[2.5rem] hover:scale-[1.02] transition-all relative overflow-hidden">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-xs font-bold uppercase tracking-widest opacity-80">Campaigns Total</CardTitle>
                 </CardHeader>
@@ -125,7 +125,7 @@ export default function GeophysicsDashboardPage({ searchParams }: any) {
                 </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg rounded-[2.5rem] hover:scale-[1.02] transition-all relative overflow-hidden bg-white dark:bg-slate-900">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Budget Variance</CardTitle>
                 </CardHeader>
@@ -143,7 +143,7 @@ export default function GeophysicsDashboardPage({ searchParams }: any) {
                 </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg rounded-[2.5rem] hover:scale-[1.02] transition-all relative overflow-hidden bg-white dark:bg-slate-900">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Actual Spend</CardTitle>
                 </CardHeader>
@@ -158,7 +158,7 @@ export default function GeophysicsDashboardPage({ searchParams }: any) {
                 </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg rounded-[2.5rem] hover:scale-[1.02] transition-all relative overflow-hidden bg-white dark:bg-slate-900">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Completion</CardTitle>
                 </CardHeader>
@@ -172,7 +172,7 @@ export default function GeophysicsDashboardPage({ searchParams }: any) {
                 </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-slate-900 text-white">
+            <Card className="border-0 shadow-lg bg-slate-900 text-white rounded-[2.5rem] hover:scale-[1.02] transition-all relative overflow-hidden">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-xs font-bold uppercase tracking-widest opacity-80">Health Check</CardTitle>
                 </CardHeader>

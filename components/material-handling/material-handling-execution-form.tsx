@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Truck, Activity, MapPin, Calendar, Clock, CheckCircle2, MessageSquare, Calculator, Fuel, TrendingUp, Shield } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { ProfessionalSignature } from "@/components/professional-signature"
+import { useOffline } from "@/components/offline-provider"
 
 interface MaterialHandlingExecutionFormProps {
   operationId?: string
@@ -19,6 +20,7 @@ interface MaterialHandlingExecutionFormProps {
 export function MaterialHandlingExecutionForm({ operationId }: MaterialHandlingExecutionFormProps) {
   const router = useRouter()
   const { toast } = useToast()
+  const { offlineWrite } = useOffline()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -101,12 +103,20 @@ export function MaterialHandlingExecutionForm({ operationId }: MaterialHandlingE
         created_by: user?.id
       }
 
-      const { error } = await supabase.from("material_handling_operations").insert(payload)
-      if (error) throw error
+      const { queued, error: offlineError } = await offlineWrite("material_handling_operations", "insert", payload)
+
+      if (offlineError) throw new Error(offlineError)
+
+      if (!queued) {
+        const { error } = await supabase.from("material_handling_operations").insert(payload)
+        if (error) throw error
+      }
 
       toast({
-        title: "FLEET EXECUTION AUTHORIZED",
-        description: `Production data for ${formData.operation_number} has been committed.`
+        title: queued ? "OFFLINE MODE ACTIVE" : "FLEET EXECUTION AUTHORIZED",
+        description: queued 
+          ? `Data queued locally for ${formData.operation_number}. It will sync when online.`
+          : `Production data for ${formData.operation_number} has been committed.`
       })
 
       router.push("/material-handling")
