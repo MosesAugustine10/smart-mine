@@ -101,7 +101,12 @@ export default function AdminDashboard() {
       }
     }
 
-    fetchData()
+    const fallbackTimer = setTimeout(() => {
+      console.warn("AdminDashboard: fetch timeout reached.")
+      setLoading(false)
+    }, 5000)
+
+    fetchData().finally(() => clearTimeout(fallbackTimer))
   }, [authLoading, profile, user, period])
 
   if (loading && !stats) return (

@@ -2,7 +2,7 @@
 // Plain Workbox-compatible SW (no Serwist build plugin needed)
 // Handles: app-shell caching, API response caching, offline fallback
 
-const CACHE_NAME = "smart-mine-v1";
+const CACHE_NAME = "smart-mine-v2";
 const OFFLINE_URL = "/login";
 
 // Assets to pre-cache on install
@@ -48,8 +48,12 @@ self.addEventListener("fetch", (event) => {
       fetch(request)
         .then((res) => {
           if (res && res.status === 200 && res.type === 'basic' && !url.pathname.includes("backup")) {
-            const clone = res.clone();
-            caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+            try {
+              const clone = res.clone();
+              caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+            } catch (e) {
+              console.warn("[SW] Failed to clone response", e);
+            }
           }
           return res;
         })
@@ -94,7 +98,10 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((c) => c.put(request, clone));
         }
         return res;
-      }).catch(() => null);
+      }).catch(() => {
+        // Return a generic error response instead of null
+        return new Response("Network error", { status: 408, statusText: "Network Error" });
+      });
       return cached || networkFetch;
     })
   );

@@ -76,126 +76,123 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient()
+    let isMounted = true
 
-    async function loadSession() {
-      const getCookie = (name: string) => {
-        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
-        return match ? match[2] : null
-      }
-
-      const syncCookie = getCookie('msm_user_role')
-      let cachedProfile: any = null
-      
-      if (syncCookie) {
-          try {
-              let decoded = syncCookie;
-              try { decoded = decodeURIComponent(syncCookie); } catch (e) {}
-              if (decoded.startsWith('j:')) decoded = decoded.substring(2);
-              if (decoded.startsWith('{')) {
-                  const data = JSON.parse(decoded)
-                  if (data && data.role) {
-                      cachedProfile = {
-                          role: data.role.toUpperCase(),
-                          company_id: data.cid,
-                          enabled_modules: data.mods || []
-                      }
-                  }
-              }
-          } catch (e) {
-              console.warn("AuthProvider: Cookie parse error", e)
-          }
-      }
-
-      if (isPublic) {
-        setLoading(false)
-        return
-      }
-
+    async function loadInitialSession() {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        if (sessionError) throw sessionError
-        
-        if (session?.user) {
+        // 1. Quick check for cookies to set initial profile
+        const getCookie = (name: string) => {
+          const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+          return match ? match[2] : null
+        }
+        const syncCookie = getCookie('msm_user_role')
+        if (syncCookie && isMounted) {
+          try {
+            const decoded = decodeURIComponent(syncCookie).replace(/^j:/, '')
+            if (decoded.startsWith('{')) {
+              const data = JSON.parse(decoded)
+              if (data.role) {
+                setProfile(prev => prev || ({
+                  role: data.role.toUpperCase(),
+                  company_id: data.cid,
+                  enabled_modules: data.mods || []
+                } as any))
+              }
+            }
+          } catch {}
+        }
+
+        if (isPublic) {
+          setLoading(false)
+          return
+        }
+
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user && isMounted) {
           setUser(session.user)
           
-          if (cachedProfile) {
-            setProfile({ id: session.user.id, email: session.user.email || "", ...cachedProfile } as UserProfile)
-            setLoading(false)
-            return
-          }
+          // Emergency Bypass for Super Admin
+          const isSuper = (session.user.user_metadata as any)?.role === 'SUPER_ADMIN' || 
+                         document.cookie.includes('SUPER_ADMIN')
 
-          console.log("AuthProvider: Fetching profile for", session.user.id)
-          const { data: profileData, error: profileError } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle()
-          
-          if (profileError) console.error("AuthProvider: Profile fetch error", profileError)
-
-          if (profileData) {
-            console.log("AuthProvider: Profile found", profileData.role)
+          if (isSuper) {
             setProfile({
-              ...profileData,
-              enabled_modules: (profileData as any).companies?.enabled_modules || []
+              id: session.user.id,
+              email: session.user.email || "",
+              role: 'SUPER_ADMIN',
+              position: 'SYSTEM_OWNER',
+              status: 'active'
             } as UserProfile)
-          }
-        }
-      } catch (err) {
-        console.warn("AuthProvider: Initialization warning", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    const fallbackTimer = setTimeout(() => setLoading(false), 3000)
-    loadSession().then(() => clearTimeout(fallbackTimer))
-
-    let listener: any = null
-    const { data } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-      if (session?.user) {
-        setUser(session.user)
-        
-        // Super Admin Bypass
-        const isSuper = (session.user.user_metadata as any)?.role === 'SUPER_ADMIN' || 
-                       document.cookie.includes('SUPER_ADMIN')
-
-        if (isSuper && !profile) {
-            console.log("AuthProvider: Emergency SuperAdmin detected")
-            setProfile({
-                id: session.user.id,
-                email: session.user.email || "",
-                role: 'SUPER_ADMIN',
-                position: 'SYSTEM_OWNER',
-                status: 'active'
-            } as UserProfile)
-            setLoading(false)
-        } else if (!profile) {
+          } else {
             const { data: profileData } = await supabase
               .from('user_profiles')
               .select('*')
               .eq('id', session.user.id)
               .maybeSingle()
             
-            if (profileData) {
+            if (profileData && isMounted) {
               setProfile({
                 ...profileData,
                 enabled_modules: (profileData as any).companies?.enabled_modules || []
               } as UserProfile)
             }
+          }
         }
-      } else {
-        setUser(null)
-        setProfile(null)
+      } catch (err) {
+        console.warn("AuthProvider: Init error", err)
+      } finally {
+        if (isMounted) setLoading(false)
       }
-      setLoading(false)
+    }
+
+    loadInitialSession()
+
+    // Safety timeout: Never stay in loading state more than 3 seconds
+    const fallback = setTimeout(() => {
+      if (isMounted) {
+        console.warn("AuthProvider: Initialization timeout reached, forcing ready state.")
+        setLoading(false)
+      }
+    }, 3000)
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
+      if (!isMounted) return
+      
+      try {
+        if (session?.user) {
+          setUser(session.user)
+          if (event === 'SIGNED_IN') {
+             // Fresh fetch on sign in
+             const { data: profileData } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .maybeSingle()
+            
+            if (profileData && isMounted) {
+              setProfile({
+                ...profileData,
+                enabled_modules: (profileData as any).companies?.enabled_modules || []
+              } as UserProfile)
+            }
+          }
+        } else {
+          setUser(null)
+          setProfile(null)
+        }
+      } catch (e) {
+        console.error("AuthProvider: Auth state change error", e)
+      } finally {
+        if (isMounted) setLoading(false)
+      }
     })
-    listener = data
 
     return () => {
-      listener?.subscription.unsubscribe()
+      isMounted = false
+      clearTimeout(fallback)
+      authListener?.subscription.unsubscribe()
     }
-  }, [isPublic, profile])
+  }, [isPublic])
 
   const signOut = async () => {
     document.cookie = 'msm_user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
@@ -285,13 +282,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
        return
     }
 
-    const path = (pathname?.split('/')[1]) || 'home'
+    const path = (pathname?.split('/')[1]) || 'admin'
     if (profile?.role?.toUpperCase() === 'SUPER_ADMIN' && path !== 'super-admin' && !isAuthRoute && !isPublic) {
       router.replace('/super-admin')
       return
     }
 
-    if (path !== 'home' && path !== '' && path !== 'super-admin' && !pathname?.startsWith('/chimbo') && !hasAccess(path)) {
+    if (path !== 'admin' && path !== '' && path !== 'super-admin' && !hasAccess(path)) {
       router.push('/unauthorized')
     }
   }, [pathname, loading, profile, isAuthRoute, router])

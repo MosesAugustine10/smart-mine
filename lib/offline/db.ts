@@ -46,6 +46,13 @@ function openDB(): Promise<IDBDatabase> {
 
     request.onsuccess = (event) => {
       db = (event.target as IDBOpenDBRequest).result
+      
+      // Handle connection closing from outside (e.g. HMR or other tab)
+      db.onversionchange = () => {
+        db?.close()
+        db = null
+      }
+      
       resolve(db)
     }
 

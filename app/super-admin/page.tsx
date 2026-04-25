@@ -10,7 +10,7 @@ import { useAuth } from "@/components/auth-provider"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { 
     Users, Activity, Building2, ShieldCheck, Coins,
-    Database, ActivitySquare, Cpu, Search, Plus, Settings,
+    Database, Cpu, Search, Plus, Settings,
     LayoutDashboard, Globe, AlertCircle, TrendingUp, HardHat, Compass,
     Zap, Pickaxe, Diamond, Layers, Truck, Package, ShieldAlert, Loader2, Phone,
     Flag, ImageIcon, HeartPulse, Archive, ClipboardList, Upload, Trash2, CheckCircle2,
@@ -185,8 +185,8 @@ export default function SuperAdminDashboard() {
     })
   }, [loading, profile])
 
-  useEffect(() => { if (activeTab === "audit") loadAudit() }, [activeTab, loadAudit])
-  useEffect(() => { if (activeTab === "companies") loadAllCompanies() }, [activeTab, loadAllCompanies])
+  useEffect(() => { if (activeTab === "audit") loadAudit() }, [activeTab])
+  useEffect(() => { if (activeTab === "companies") loadAllCompanies() }, [activeTab])
 
   const toggleFlag = async (flag: any) => {
     setFlagSaving(true)
@@ -731,164 +731,14 @@ export default function SuperAdminDashboard() {
       {/* Legacy Registered Mines Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-2">
         <div className="lg:col-span-2 space-y-6">
-          {/* LEADS / INBOX SECTION */}
-          {(leads.length > 0 || true) && (
-            <Card className="border shadow-2xl rounded-[2.5rem] overflow-hidden border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5">
-              <CardHeader className="bg-amber-500/10 border-b border-amber-500/20 p-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/30">
-                    <ActivitySquare className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg font-black uppercase tracking-tight text-amber-900 dark:text-amber-500">Inbound Registrations</CardTitle>
-                    <p className="text-[10px] font-bold text-amber-700/60 uppercase tracking-widest mt-0.5">Maombi Mapya Kutoka Nje</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {leads.length === 0 ? (
-                  <div className="p-8 text-center text-xs font-bold uppercase tracking-widest text-slate-400">Hakuna Maombi Mapya</div>
-                ) : (
-                  <div className="divide-y divide-amber-500/10">
-                    {leads.map((lead, idx) => (
-                      <div key={idx} className="p-6 hover:bg-white/50 dark:hover:bg-slate-900/50 transition-colors flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-black text-slate-900 dark:text-white text-sm uppercase">{lead.full_name}</h4>
-                            <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 border-0 text-[8px] uppercase tracking-widest">{lead.company_type}</Badge>
-                          </div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2"><Phone className="w-3 h-3 inline pb-0.5" /> {lead.phone_number}</p>
-                          {lead.message && (
-                            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 italic bg-amber-500/5 p-3 rounded-xl border border-amber-500/10">"{lead.message}"</p>
-                          )}
-                        </div>
-                        <Button onClick={() => { vibe(); setNewOrg({...newOrg, name: lead.full_name, phone: lead.phone_number, category: lead.company_type.includes('Mdogo') ? 'SMALL_SCALE' : 'MEDIUM_SCALE'}); setShowNewOrg(true); }} className="h-10 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black uppercase text-[9px] tracking-widest shadow-xl whitespace-nowrap shrink-0">
-                          PROVISION NOW
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* MANAGEMENT TABLE */}
-          <Card className="border shadow-2xl rounded-[2.5rem] overflow-hidden border-slate-100 bg-white">
-            <CardHeader className="bg-slate-50/50 border-b p-8">
-             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div>
-                   <CardTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-3 text-slate-900">
-                     <Globe className="h-6 w-6 text-slate-600" />
-                     Registered Mines
-                   </CardTitle>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Cross-Platform Organization Manager (Meneja wa Mashirika yote)</p>
-                </div>
-                
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                    <div className="relative flex-1 md:w-64">
-                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                         <input 
-                            placeholder="Tafuta Mgodi..." 
-                            className="w-full h-12 pl-11 pr-4 rounded-xl bg-white border border-slate-200 text-xs font-bold outline-none focus:ring-2 ring-blue-500/20 transition-all"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                         />
-                    </div>
-                    <Button onClick={() => { vibe(); setShowNewOrg(true) }} className="h-12 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest bg-slate-900 hover:bg-slate-800 text-white shadow-xl">
-                       <Plus className="w-3 h-3 mr-2" /> New Org
-                    </Button>
-                </div>
-              </div>
-          </CardHeader>
-          <CardContent className="p-0">
-             <div className="divide-y divide-slate-100">
-                   {companies.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())).map((company, idx) => (
-                      <div key={idx} className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between hover:bg-slate-50 transition-colors gap-4">
-                          <div className="flex items-center gap-3 md:gap-4">
-                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center border-2 ${
-                                company.category === 'SMALL_SCALE' ? 'bg-amber-500 border-amber-600' :
-                                company.category === 'MEDIUM_SCALE' ? 'bg-blue-600 border-blue-700' :
-                                'bg-slate-900 border-slate-950'
-                              } shadow-lg shrink-0`}>
-                                  {company.category === 'SMALL_SCALE' ? <Pickaxe className="w-5 h-5 text-white" /> : <Building2 className="w-5 h-5 text-white" />}
-                              </div>
-                              <div>
-                                  <div className="flex items-center gap-3">
-                                      <h4 className="font-black text-slate-900 text-lg tracking-tight">{company.name}</h4>
-                                      <Badge variant="outline" className={`text-[8px] font-black uppercase tracking-tighter ${
-                                          company.category === 'SMALL_SCALE' ? 'text-amber-600 border-amber-200 bg-amber-50' :
-                                          company.category === 'MEDIUM_SCALE' ? 'text-blue-600 border-blue-200 bg-blue-50' :
-                                          'text-slate-500 border-slate-200 bg-slate-50'
-                                      }`}>
-                                          {company.category === 'SMALL_SCALE' ? 'Small Scale' : 'Medium Scale'}
-                                      </Badge>
-                                  </div>
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                                      {company.nodes || 0} Nodes • Vault {company.size || '0.0 GB'} • Last Sync {Math.floor(Math.random()*60)}m ago
-                                  </p>
-                              </div>
-                          </div>
-                          
-                          <div className="flex flex-wrap items-center gap-2">
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => handleLaunchDashboard(company)}
-                                    className="flex-1 md:flex-none h-10 px-4 rounded-xl hover:bg-slate-900 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 border border-slate-100 shadow-sm whitespace-nowrap"
-                                >
-                                    <LayoutDashboard className="w-3.5 h-3.5 text-blue-500" />
-                                    Launch
-                                </Button>
-                                <a href={`/super-admin/companies/${company.id}/subscription`} className="flex-1 md:flex-none">
-                                    <Button variant="ghost" size="sm"
-                                        className="w-full h-10 px-3 rounded-xl hover:bg-amber-100 hover:text-amber-700 font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-1.5 border border-amber-100 shadow-sm whitespace-nowrap">
-                                        <Coins className="w-3.5 h-3.5 text-amber-500" />Subscription
-                                    </Button>
-                                </a>
-                          </div>
-                      </div>
-                  ))}
-             </div>
-          </CardContent>
-   
-        </Card>
+          {/* Inbound Registrations and Registered Mines cards removed by user request */}
         </div>
 
 
 
         {/* SIDEBAR PANELS */}
         <div className="space-y-6">
-            {/* TIER BREAKDOWN */}
-            <Card className="border shadow-2xl rounded-[2.5rem] overflow-hidden border-slate-100 bg-white">
-                <CardHeader className="pb-4">
-                    <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-500">Tier Distribution</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {[
-                        { label: "Medium Scale", count: companies.filter(c => c.category === 'MEDIUM_SCALE').length || 0, color: "bg-blue-500", icon: Building2 },
-                        { label: "Contractors", count: 0, color: "bg-indigo-500", icon: LayoutDashboard },
-                        { label: "Consultants", count: 0, color: "bg-slate-800", icon: Compass },
-                        { label: "Small Scale", count: companies.filter(c => c.category === 'SMALL_SCALE').length || 0, color: "bg-amber-500", icon: HardHat }
-                    ].map((tier, i) => (
-                        <div key={i} className="flex items-center gap-4">
-                            <div className={`w-8 h-8 rounded-lg ${tier.color} flex items-center justify-center shrink-0`}>
-                                <tier.icon className="w-4 h-4 text-white" />
-                            </div>
-                            <div className="flex-1">
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-[10px] font-black uppercase tracking-tight text-slate-900">{tier.label}</span>
-                                    <span className="text-[10px] font-bold text-slate-500">{tier.count}</span>
-                                </div>
-                                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                    <div className={`h-full ${tier.color}`} style={{ width: `${Math.random()*40 + 40}%` }} />
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </CardContent>
-            </Card>
-
+            {/* Tier Breakdown removed by user request */}
             {/* SYSTEM AUDIT & SECURITY PULSE */}
             <Card className="border shadow-2xl rounded-[2.5rem] overflow-hidden border-slate-100 bg-slate-900 text-white">
                 <CardHeader className="p-8 pb-4">

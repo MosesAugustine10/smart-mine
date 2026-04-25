@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Mail, Lock, Eye, EyeOff, ShieldCheck, Globe } from "lucide-react"
+import { Loader2, Mail, Lock, Eye, EyeOff, ShieldCheck, Globe, RefreshCw } from "lucide-react"
 import { useTranslation } from "@/components/language-context"
 import { LoginCarousel } from "@/components/login-carousel"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -49,12 +49,23 @@ export default function LoginPage() {
           .select("role, totp_secret, is_temp_password, temp_password_expires_at")
           .eq("id", data.user.id)
           .single()
+        
         if (profile) {
           role = profile.role
           profileData = profile
+        } else {
+          // Fallback: Check metadata for Super Admin
+          const metaRole = (data.user.user_metadata as any)?.role || (data.user.app_metadata as any)?.role
+          if (metaRole === 'SUPER_ADMIN') {
+            role = 'SUPER_ADMIN'
+          }
         }
       } catch (err) {
-        console.warn("Profile fetch failed")
+        console.warn("Profile fetch failed, using metadata fallback")
+        const metaRole = (data.user.user_metadata as any)?.role || (data.user.app_metadata as any)?.role
+        if (metaRole === 'SUPER_ADMIN') {
+          role = 'SUPER_ADMIN'
+        }
       }
 
       if (profileData?.is_temp_password) {
@@ -107,19 +118,26 @@ export default function LoginPage() {
   }
 
   const completeLogin = (data: any, role: string) => {
+    console.log(`[Login] Completing login for role: ${role}`)
     const syncData = {
       role: role,
       cid: (data.user?.user_metadata as any)?.company_id || null,
       mods: role === "SUPER_ADMIN" ? ["all"] : [],
       ts: Date.now()
     }
-    document.cookie = `msm_user_role=${encodeURIComponent(JSON.stringify(syncData))}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`
-
-    if (role === "SUPER_ADMIN") {
-      window.location.href = "/super-admin"
-    } else {
-      window.location.href = "/"
+    
+    try {
+      document.cookie = `msm_user_role=${encodeURIComponent(JSON.stringify(syncData))}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`
+      console.log("[Login] Cookie set successfully")
+    } catch (e) {
+      console.error("[Login] Failed to set cookie", e)
     }
+
+    const target = role === "SUPER_ADMIN" ? "/super-admin" : "/admin"
+    console.log(`[Login] Redirecting to: ${target}`)
+    
+    // Use both window.location.href and window.location.replace for maximum compatibility
+    window.location.replace(target)
   }
 
   return (
@@ -262,7 +280,36 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="p-8 mt-auto border-t border-stone-100 dark:border-stone-900">
+        <div className="p-8 mt-auto border-t border-stone-100 dark:border-stone-900 space-y-6">
+          <button 
+              type="button"
+              onClick={async () => {
+                if (confirm("This will clear all local session data and reload the system. Continue?")) {
+                  // Clear all cookies
+                  document.cookie.split(";").forEach((c) => {
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                  });
+                  // Clear storage
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  // Clear caches
+                  if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(k => caches.delete(k)));
+                  }
+                  // Unregister SW
+                  if ('serviceWorker' in navigator) {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(regs.map(r => r.unregister()));
+                  }
+                  window.location.reload();
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-stone-200 dark:border-stone-800 text-stone-400 hover:text-amber-600 hover:border-amber-500 hover:bg-amber-50/50 dark:hover:bg-amber-950/10 transition-all text-[10px] font-black uppercase tracking-widest"
+          >
+            Trouble Logging In? Hard Reset System
+          </button>
+
           <p className="text-center text-[10px] font-black text-stone-400 uppercase tracking-[0.4em]">
             © 2026 SMART MINE TANZANIA | SECURE NODE ALPHA
           </p>

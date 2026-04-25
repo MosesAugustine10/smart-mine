@@ -664,11 +664,24 @@ ALTER TABLE brands               ENABLE ROW LEVEL SECURITY;
 -- 1. Helper Functions
 CREATE OR REPLACE FUNCTION get_my_company_id() RETURNS UUID AS $$
   SELECT company_id FROM user_profiles WHERE id = auth.uid();
-$$ LANGUAGE sql STABLE;
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
 
 CREATE OR REPLACE FUNCTION is_super_admin() RETURNS BOOLEAN AS $$
-  SELECT 'SUPER_ADMIN' = ANY(roles) OR role = 'SUPER_ADMIN' FROM user_profiles WHERE id = auth.uid();
-$$ LANGUAGE sql STABLE;
+BEGIN
+  -- Check JWT metadata first (fast, no recursion)
+  IF (auth.jwt() -> 'user_metadata' ->> 'role' = 'SUPER_ADMIN') THEN
+    RETURN TRUE;
+  END IF;
+  
+  -- Fallback to user_profiles check (only if metadata missing)
+  -- Note: We use a subquery that bypasses RLS if possible or we accept the overhead once
+  RETURN EXISTS (
+    SELECT 1 FROM user_profiles 
+    WHERE id = auth.uid() 
+    AND (role = 'SUPER_ADMIN' OR 'SUPER_ADMIN' = ANY(roles))
+  );
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 -- 2. Multi-Tenant Policy Generator (Conceptual)
 -- For this production script, we apply them explicitly for clarity.
