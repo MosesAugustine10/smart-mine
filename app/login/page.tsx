@@ -60,7 +60,7 @@ export default function LoginPage() {
       if (profileData?.is_temp_password) {
         const expires = profileData.temp_password_expires_at ? new Date(profileData.temp_password_expires_at) : null
         if (!expires || expires > new Date()) {
-          window.location.href = "/auth/set-password"
+          window.location.href = "/auth/change-password"
           return
         } else {
           setError("Your temporary password has expired. Please contact your administrator.")
@@ -70,6 +70,7 @@ export default function LoginPage() {
         }
       }
 
+      /* TOTP Step Disabled for Testing
       const requiresTotp = ["SUPER_ADMIN", "admin", "accountant"].includes(role)
       const deviceId = localStorage.getItem("device_id")
       const isRecognizedDevice = deviceId && deviceId === data.user.id
@@ -81,6 +82,7 @@ export default function LoginPage() {
         setLoading(false)
         return
       }
+      */
 
       completeLogin(data, role)
     } catch (err: any) {

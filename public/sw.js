@@ -47,8 +47,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((res) => {
-          // Cache safe API reads
-          if (res.ok && !url.pathname.includes("backup")) {
+          if (res && res.status === 200 && res.type === 'basic' && !url.pathname.includes("backup")) {
             const clone = res.clone();
             caches.open(CACHE_NAME).then((c) => c.put(request, clone));
           }
@@ -62,14 +61,16 @@ self.addEventListener("fetch", (event) => {
   // Static assets (_next/static): cache-first
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
-      caches.match(request).then(
-        (cached) => cached || fetch(request).then((res) => {
-          if (res.ok) {
-            caches.open(CACHE_NAME).then((c) => c.put(request, res.clone()));
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((res) => {
+          if (res && res.status === 200 && res.type === 'basic') {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(request, clone));
           }
           return res;
-        })
-      )
+        });
+      })
     );
     return;
   }
@@ -88,11 +89,12 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     caches.match(request).then((cached) => {
       const networkFetch = fetch(request).then((res) => {
-        if (res.ok) {
-          caches.open(CACHE_NAME).then((c) => c.put(request, res.clone()));
+        if (res && res.status === 200 && res.type === 'basic') {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(request, clone));
         }
         return res;
-      });
+      }).catch(() => null);
       return cached || networkFetch;
     })
   );

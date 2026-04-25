@@ -49,6 +49,14 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure columns exist if table already existed
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS roles TEXT[] DEFAULT ARRAY[]::TEXT[];
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS is_temp_password BOOLEAN DEFAULT FALSE;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS temp_password_expires_at TIMESTAMPTZ;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS totp_secret TEXT;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN DEFAULT FALSE;
+
 -- =============================================
 -- 3. PROJECTS
 -- =============================================
@@ -62,6 +70,7 @@ CREATE TABLE IF NOT EXISTS projects (
   status        TEXT DEFAULT 'active',
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 4. DRILLING OPERATIONS
@@ -104,6 +113,7 @@ CREATE TABLE IF NOT EXISTS drilling_operations (
   driller_name          TEXT,
   created_at            TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE drilling_operations ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 5. DIAMOND DRILLING OPERATIONS
@@ -129,6 +139,7 @@ CREATE TABLE IF NOT EXISTS diamond_drilling_operations (
   created_by                UUID REFERENCES user_profiles(id),
   created_at                TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE diamond_drilling_operations ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 CREATE TABLE IF NOT EXISTS diamond_drilling_executions (
   id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -143,6 +154,7 @@ CREATE TABLE IF NOT EXISTS diamond_drilling_executions (
   notes         TEXT,
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE diamond_drilling_executions ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 6. BLASTING OPERATIONS
@@ -175,6 +187,7 @@ CREATE TABLE IF NOT EXISTS blasting_operations (
   created_by          UUID REFERENCES user_profiles(id),
   created_at          TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE blasting_operations ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 7. MATERIAL HANDLING OPERATIONS
@@ -213,6 +226,7 @@ CREATE TABLE IF NOT EXISTS material_handling_operations (
   created_by                UUID REFERENCES user_profiles(id),
   created_at                TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE material_handling_operations ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 8. VEHICLES (Fleet Registry)
@@ -236,6 +250,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
   tracker_protocol  TEXT,
   created_at        TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 9. FUEL LOGS
@@ -259,6 +274,7 @@ CREATE TABLE IF NOT EXISTS fuel_logs (
   status                TEXT DEFAULT 'approved',
   created_at            TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE fuel_logs ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 10. MAINTENANCE LOGS
@@ -281,6 +297,7 @@ CREATE TABLE IF NOT EXISTS maintenance_logs (
   status                  TEXT DEFAULT 'completed',
   created_at              TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE maintenance_logs ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 11. INVENTORY ITEMS
@@ -303,6 +320,7 @@ CREATE TABLE IF NOT EXISTS inventory_items (
   created_by          UUID REFERENCES user_profiles(id),
   created_at          TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 12. STOCK TRANSACTIONS
@@ -319,6 +337,7 @@ CREATE TABLE IF NOT EXISTS stock_transactions (
   created_by      UUID REFERENCES user_profiles(id),
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE stock_transactions ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 13. SAFETY INCIDENTS
@@ -341,6 +360,7 @@ CREATE TABLE IF NOT EXISTS safety_incidents (
   created_by              UUID REFERENCES user_profiles(id),
   created_at              TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE safety_incidents ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 14. RISK ASSESSMENTS
@@ -360,6 +380,7 @@ CREATE TABLE IF NOT EXISTS risk_assessments (
   created_by      UUID REFERENCES user_profiles(id),
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE risk_assessments ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 15. INVOICES
@@ -390,6 +411,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   created_by      UUID REFERENCES user_profiles(id),
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 CREATE TABLE IF NOT EXISTS invoice_items (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -400,6 +422,7 @@ CREATE TABLE IF NOT EXISTS invoice_items (
   total           NUMERIC DEFAULT 0,
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE invoice_items ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 16. EXPENSES (Financial Ledger)
@@ -419,6 +442,7 @@ CREATE TABLE IF NOT EXISTS expenses (
   created_by      UUID REFERENCES user_profiles(id),
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 17. GEOPHYSICS SURVEYS
@@ -445,6 +469,7 @@ CREATE TABLE IF NOT EXISTS geophysics_surveys (
   created_by      UUID REFERENCES user_profiles(id),
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE geophysics_surveys ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 CREATE TABLE IF NOT EXISTS geophysics_executions (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -458,6 +483,7 @@ CREATE TABLE IF NOT EXISTS geophysics_executions (
   notes           TEXT,
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE geophysics_executions ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 18. EQUIPMENT INSPECTIONS (Quarry Checklist)
@@ -477,6 +503,7 @@ CREATE TABLE IF NOT EXISTS equipment_inspections (
   supervisor_signature  TEXT,
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE equipment_inspections ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 19. EQUIPMENT PAYLOADS
@@ -500,20 +527,24 @@ CREATE TABLE IF NOT EXISTS equipment_payloads (
   supervisor_signature  TEXT,
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE equipment_payloads ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 CREATE TABLE IF NOT EXISTS equipment_payload_logs (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   payload_id      UUID REFERENCES equipment_payloads(id) ON DELETE CASCADE,
+  company_id      UUID REFERENCES companies(id),
   trip_number     INT,
   load_tonnes     NUMERIC,
   timestamp       TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE equipment_payload_logs ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 -- =============================================
 -- 20. AUDIT LOGS
 -- =============================================
 CREATE TABLE IF NOT EXISTS audit_logs (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  company_id  UUID REFERENCES companies(id),
   actor_id    UUID REFERENCES auth.users(id),
   actor_name  TEXT,
   action      TEXT NOT NULL,
@@ -522,6 +553,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   ip_address  TEXT,
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_module ON audit_logs(module, created_at DESC);
 
@@ -531,23 +563,27 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_module ON audit_logs(module, created_a
 CREATE TABLE IF NOT EXISTS password_reset_requests (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id     UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  email       TEXT NOT NULL,
-  full_name   TEXT,
-  status      TEXT DEFAULT 'pending',
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  user_email  TEXT NOT NULL,
+  company_id  UUID REFERENCES companies(id),
+  status      TEXT DEFAULT 'pending', -- 'pending', 'resolved'
+  requested_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE password_reset_requests ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
+ALTER TABLE password_reset_requests ADD COLUMN IF NOT EXISTS user_email TEXT;
 
 -- =============================================
 -- 22. BRANDS & SYSTEM FLAGS
 -- =============================================
 CREATE TABLE IF NOT EXISTS brands (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  company_id   UUID REFERENCES companies(id),
   brand_name   TEXT NOT NULL,
   logo_url     TEXT,
   tagline      TEXT,
   is_default   BOOLEAN DEFAULT FALSE,
   created_at   TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE brands ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_brands_default ON brands(is_default) WHERE is_default = TRUE;
 
 CREATE TABLE IF NOT EXISTS system_flags (
@@ -575,9 +611,11 @@ CREATE TABLE IF NOT EXISTS vehicle_locations (
   source          TEXT DEFAULT 'phone',
   recorded_at     TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE vehicle_locations ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 CREATE TABLE IF NOT EXISTS phone_locations (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  company_id      UUID REFERENCES companies(id),
   vehicle_id      UUID REFERENCES vehicles(id) ON DELETE CASCADE,
   driver_id       UUID REFERENCES user_profiles(id),
   latitude        NUMERIC(10, 7) NOT NULL,
@@ -586,6 +624,7 @@ CREATE TABLE IF NOT EXISTS phone_locations (
   accuracy_m      NUMERIC DEFAULT 0,
   recorded_at     TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE phone_locations ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
 
 CREATE TABLE IF NOT EXISTS hardware_locations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -622,11 +661,65 @@ ALTER TABLE audit_logs           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE password_reset_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE brands               ENABLE ROW LEVEL SECURITY;
 
--- Basic Policies
-CREATE POLICY "Authenticated users read brands" ON brands FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Public can insert reset requests" ON password_reset_requests FOR INSERT WITH CHECK (true);
-CREATE POLICY "Super Admin manage all" ON audit_logs FOR ALL USING (EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = 'SUPER_ADMIN'));
--- (Add more specific policies as needed per module)
+-- 1. Helper Functions
+CREATE OR REPLACE FUNCTION get_my_company_id() RETURNS UUID AS $$
+  SELECT company_id FROM user_profiles WHERE id = auth.uid();
+$$ LANGUAGE sql STABLE;
+
+CREATE OR REPLACE FUNCTION is_super_admin() RETURNS BOOLEAN AS $$
+  SELECT 'SUPER_ADMIN' = ANY(roles) OR role = 'SUPER_ADMIN' FROM user_profiles WHERE id = auth.uid();
+$$ LANGUAGE sql STABLE;
+
+-- 2. Multi-Tenant Policy Generator (Conceptual)
+-- For this production script, we apply them explicitly for clarity.
+
+-- COMPANIES
+DROP POLICY IF EXISTS "Users view own company" ON companies;
+CREATE POLICY "Users view own company" ON companies FOR SELECT 
+  USING (id = get_my_company_id() OR is_super_admin());
+
+-- USER PROFILES
+DROP POLICY IF EXISTS "Users manage own profile" ON user_profiles;
+CREATE POLICY "Users manage own profile" ON user_profiles FOR ALL
+  USING (auth.uid() = id OR is_super_admin());
+
+-- AUDIT LOGS
+DROP POLICY IF EXISTS "Multi-tenant: audit_logs" ON audit_logs;
+CREATE POLICY "Multi-tenant: audit_logs" ON audit_logs FOR ALL
+  USING (company_id = get_my_company_id() OR is_super_admin());
+
+-- DATA TABLES: Scoped by company_id
+DROP POLICY IF EXISTS "Multi-tenant: drilling_operations" ON drilling_operations;
+CREATE POLICY "Multi-tenant: drilling_operations" ON drilling_operations FOR ALL USING (company_id = get_my_company_id() OR is_super_admin());
+
+DROP POLICY IF EXISTS "Multi-tenant: blasting_operations" ON blasting_operations;
+CREATE POLICY "Multi-tenant: blasting_operations" ON blasting_operations FOR ALL USING (company_id = get_my_company_id() OR is_super_admin());
+
+DROP POLICY IF EXISTS "Multi-tenant: vehicles" ON vehicles;
+CREATE POLICY "Multi-tenant: vehicles" ON vehicles FOR ALL USING (company_id = get_my_company_id() OR is_super_admin());
+
+DROP POLICY IF EXISTS "Multi-tenant: fuel_logs" ON fuel_logs;
+CREATE POLICY "Multi-tenant: fuel_logs" ON fuel_logs FOR ALL USING (company_id = get_my_company_id() OR is_super_admin());
+
+DROP POLICY IF EXISTS "Multi-tenant: inventory_items" ON inventory_items;
+CREATE POLICY "Multi-tenant: inventory_items" ON inventory_items FOR ALL USING (company_id = get_my_company_id() OR is_super_admin());
+
+DROP POLICY IF EXISTS "Multi-tenant: expenses" ON expenses;
+CREATE POLICY "Multi-tenant: expenses" ON expenses FOR ALL USING (company_id = get_my_company_id() OR is_super_admin());
+
+DROP POLICY IF EXISTS "Multi-tenant: invoices" ON invoices;
+CREATE POLICY "Multi-tenant: invoices" ON invoices FOR ALL USING (company_id = get_my_company_id() OR is_super_admin());
+
+-- PASSWORD RESETS
+DROP POLICY IF EXISTS "Public insert reset requests" ON password_reset_requests;
+CREATE POLICY "Public insert reset requests" ON password_reset_requests FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "View reset requests" ON password_reset_requests;
+CREATE POLICY "View reset requests" ON password_reset_requests FOR SELECT USING (company_id = get_my_company_id() OR is_super_admin());
+
+-- BRANDS
+DROP POLICY IF EXISTS "Multi-tenant: brands" ON brands;
+CREATE POLICY "Multi-tenant: brands" ON brands FOR ALL USING (company_id = get_my_company_id() OR is_super_admin());
 
 -- =============================================
 -- INITIAL DATA

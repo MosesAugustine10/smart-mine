@@ -113,10 +113,27 @@ export default function TOTPSetupPage() {
                     </Button>
                   </div>
 
-                  <div className="pt-4 border-t border-stone-100 dark:border-stone-800">
+                  <div className="pt-4 border-t border-stone-100 dark:border-stone-800 space-y-4">
                     <p className="text-[9px] font-bold text-stone-400 text-center leading-relaxed">
-                      Can't scan? Use this secret key: <code className="text-stone-900 dark:text-emerald-400 ml-1 select-all">{secret}</code>
+                      Can't scan? Use this secret key in your app:
                     </p>
+                    <div className="flex items-center gap-2 p-3 bg-stone-100 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800">
+                      <code className="flex-1 text-[11px] font-black tracking-widest text-emerald-600 dark:text-emerald-400 select-all uppercase">
+                        {secret}
+                      </code>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(secret)
+                          toast({ title: "Copied", description: "Secret key copied to clipboard" })
+                        }}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ) : (

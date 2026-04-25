@@ -988,31 +988,84 @@ export default function SuperAdminDashboard() {
                         >
                             {isSaving ? "Crunching..." : "Export Data"}
                         </Button>
-                        <Button 
-                            onClick={async () => {
-                                vibe();
-                                toast({ title: "Full System Backup", description: "Generating encrypted SQL-compatible JSON dump..." });
+                        <div className="relative">
+                            <Button 
+                                disabled={isSaving}
+                                className="w-full bg-white text-indigo-600 hover:bg-indigo-50 text-[10px] font-black uppercase h-12 rounded-xl"
+                            >
+                                <label className="flex items-center justify-center gap-2 cursor-pointer w-full h-full">
+                                    <Upload className="w-3.5 h-3.5" />
+                                    {isSaving ? "Processing..." : "Restore Data"}
+                                    <input 
+                                        type="file" 
+                                        accept=".json"
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            vibe();
+                                            setIsSaving(true);
+                                            try {
+                                                const reader = new FileReader();
+                                                reader.onload = async (event) => {
+                                                    const content = event.target?.result as string;
+                                                    
+                                                    const response = await fetch('/api/backup/import', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: content
+                                                    });
+                                                    
+                                                    const result = await response.json();
+                                                    if (!response.ok) throw new Error(result.error || "Import failed");
+                                                    
+                                                    toast({
+                                                        title: "System Restored",
+                                                        description: "Enterprise records have been successfully merged from the backup.",
+                                                    });
+                                                    window.location.reload();
+                                                };
+                                                reader.readAsText(file);
+                                            } catch (err: any) {
+                                                toast({ title: "Restore Failed", description: err.message, variant: "destructive" });
+                                            } finally {
+                                                setIsSaving(false);
+                                            }
+                                        }}
+                                    />
+                                </label>
+                            </Button>
+                        </div>
+                    </div>
+                    
+                    <Button 
+                        disabled={isSaving}
+                        onClick={async () => {
+                            vibe();
+                            setIsSaving(true);
+                            try {
+                                const response = await fetch('/api/backup');
+                                const data = await response.json();
                                 
-                                const supabase = getSupabaseBrowserClient();
-                                const tables = ['companies', 'user_profiles', 'inventory_items', 'vehicles'];
-                                const fullDump: any = {};
-                                for (const t of tables) {
-                                    const { data } = await supabase.from(t).select('*');
-                                    fullDump[t] = data;
-                                }
-
-                                const blob = new Blob([JSON.stringify(fullDump, null, 2)], { type: 'application/json' });
+                                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                                 const url = URL.createObjectURL(blob);
                                 const a = document.createElement('a');
                                 a.href = url;
-                                a.download = `SQL_DUMP_${Date.now()}.json`;
+                                a.download = `SMART_MINE_FULL_BACKUP_${new Date().toISOString().split('T')[0]}.json`;
                                 a.click();
-                            }}
-                            className="bg-white/10 hover:bg-white/20 border border-white/20 text-white text-[10px] font-black uppercase h-12 rounded-xl"
-                        >
-                            Backup SQL
-                        </Button>
-                    </div>
+                                
+                                toast({ title: "JSON Export Ready", description: "Complete system state has been archived to JSON." });
+                            } catch (err: any) {
+                                toast({ title: "Export Failed", description: err.message, variant: "destructive" });
+                            } finally {
+                                setIsSaving(false);
+                            }
+                        }}
+                        className="w-full mt-3 bg-indigo-700 hover:bg-indigo-800 text-white text-[10px] font-black uppercase h-12 rounded-xl border border-indigo-500 shadow-lg"
+                    >
+                        <Database className="w-3.5 h-3.5 mr-2" />
+                        Generate JSON Blackbox
+                    </Button>
                 </CardContent>
             </Card>
 

@@ -80,21 +80,30 @@ export async function proxy(request: NextRequest) {
   if (!session) {
     if (pathname.startsWith("/chimbo")) return NextResponse.redirect(new URL("/chimbo", request.url))
     if (pathname.startsWith("/super-admin")) return NextResponse.redirect(new URL("/gate", request.url))
-    return NextResponse.redirect(new URL("/auth/login", request.url))
+    return NextResponse.redirect(new URL("/login", request.url))
   }
 
   // 3. ROLE DETERMINATION (Sync-First)
   let userRole: string = ""
+  let companyId: string | null = null
+
   if (cachedRole) {
     try {
       const decoded = decodeURIComponent(cachedRole)
-      if (decoded.startsWith('{')) userRole = JSON.parse(decoded).role
-      else userRole = decoded
-    } catch { userRole = cachedRole }
+      if (decoded.startsWith('{')) {
+        const parsed = JSON.parse(decoded)
+        userRole = parsed.role
+        companyId = parsed.cid
+      } else {
+        userRole = decoded
+      }
+    } catch { 
+      userRole = cachedRole 
+    }
   }
 
+  // ONLY FETCH IF CACHE IS MISSING
   if (!userRole) {
-    // Resilient query: we fetch the role first, and then company data if possible
     const { data: profile } = await supabase
       .from("user_profiles")
       .select("role, company_id")
@@ -102,11 +111,13 @@ export async function proxy(request: NextRequest) {
       .maybeSingle()
     
     userRole = profile?.role || "Guest"
-    const syncData = { role: userRole, cid: profile?.company_id, mods: [], ts: Date.now() }
+    companyId = profile?.company_id || null
+    
+    const syncData = { role: userRole, cid: companyId, mods: [], ts: Date.now() }
     supabaseResponse.cookies.set("msm_user_role", JSON.stringify(syncData), { maxAge: 60 * 60 * 24, path: "/", sameSite: "lax" })
   }
 
-  // 4. SUPER ADMIN BYPASS - Send to dedicated door if they try to access internal admin routes
+  // 4. SUPER ADMIN BYPASS
   if (userRole.toUpperCase() === "SUPER_ADMIN") {
     if (pathname === "/admin" || pathname === "/home") {
       return NextResponse.redirect(new URL("/super-admin", request.url))
@@ -125,5 +136,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?|ttf|css|js)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest\\.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?|ttf|css|js|json)$).*)"],
 }
